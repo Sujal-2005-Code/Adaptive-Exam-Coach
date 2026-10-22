@@ -1,4 +1,12 @@
-const API_BASE = "http://localhost:3000/api";
+// ================= ENVIRONMENT & API CONFIGURATION =================
+// When running locally, uses localhost:3000. When deployed on Vercel, uses your Render backend URL.
+const RENDER_BACKEND_URL = window.RENDER_BACKEND_URL || localStorage.getItem('aec_backend_url') || "https://adaptive-exam-coach.onrender.com";
+
+const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? "http://localhost:3000"
+    : RENDER_BACKEND_URL;
+
+const API_BASE = `${BACKEND_URL}/api`;
 let authToken = localStorage.getItem('aec_token');
 let currentUser = localStorage.getItem('aec_user');
 
@@ -1098,7 +1106,7 @@ async function initializeApp() {
 initializeApp();
 
 // ================= MULTIPLAYER ARENA LOGIC =================
-const socket = io("http://localhost:3000");
+const socket = io(BACKEND_URL);
 let currentArenaRoom = null;
 let arenaQuestions = [];
 let currentArenaQ = 0;
