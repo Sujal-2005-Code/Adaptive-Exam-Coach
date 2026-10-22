@@ -201,108 +201,267 @@ body{
 .icon-btn:hover{transform:translateY(-1px); box-shadow:0 3px 0 var(--shadow);}
 .icon-btn.active{background:var(--ink); color:var(--paper); border-color:var(--ink);}
 
-/* ---------- Admit Card Strip ---------- */
-.admit-card{
-  background:var(--card);
-  border:1.5px solid var(--card-border);
-  border-radius:var(--radius);
-  box-shadow:0 3px 0 var(--shadow);
-  padding:16px 22px;
-  margin:6px 0 22px;
-  display:grid;
-  grid-template-columns:1.5fr repeat(4, 1fr);
-  gap:16px;
-  align-items:center;
+/* ---------- Candidate Diagnostic Docket / Admit Card Strip ---------- */
+.admit-card {
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(31, 42, 68, 0.05);
+  padding: 14px 18px;
+  margin: 6px 0 20px;
+  display: grid;
+  grid-template-columns: 1.35fr repeat(4, 1fr);
+  gap: 12px;
+  align-items: stretch;
 }
-@media (max-width:900px){
-  .admit-card{grid-template-columns:1fr 1fr;}
+@media (max-width: 1080px) {
+  .admit-card {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
 }
-@media (max-width:600px){
-  .admit-card{grid-template-columns:1fr;}
-}
-.admit-goal-card{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
-.admit-goal-tag{
-  font-size:11px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.08em;
-  color:var(--red);
-}
-.admit-card .goal{
-  font-size:12.5px;
-  color:var(--ink-soft);
-  line-height:1.45;
-}
-.admit-stat{
-  text-align:center;
-  border-left:1px dashed var(--card-border);
-  padding-left:14px;
-}
-@media (max-width:900px){
-  .admit-stat{border-left:none; border-top:1px dashed var(--card-border); padding-top:10px; padding-left:0;}
-}
-.admit-stat .n{
-  font-family:'IBM Plex Mono',monospace;
-  font-size:24px;
-  font-weight:700;
-  color:var(--red-soft);
-}
-.admit-stat .l{
-  font-size:10.5px;
-  text-transform:uppercase;
-  letter-spacing:.08em;
-  color:var(--ink-soft);
-  font-weight:600;
-  margin-top:2px;
+@media (max-width: 600px) {
+  .admit-card {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* ---------- Nav Tabs ---------- */
-nav.tabs{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-bottom:22px;
-  border-bottom:2px solid var(--card-border);
-  padding-bottom:6px;
+.admit-goal-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, var(--paper-1) 0%, rgba(250, 246, 237, 0.7) 100%);
+  border: 1px solid var(--card-border);
+  border-left: 3.5px solid var(--gold);
+  border-radius: 8px;
 }
-nav.tabs button{
-  font-family:'IBM Plex Sans',sans-serif;
-  font-weight:600;
-  font-size:13.5px;
-  background:var(--card);
-  border:1.5px solid var(--card-border);
-  border-radius:8px;
-  padding:8px 14px;
-  cursor:pointer;
-  color:var(--ink-soft);
-  transition:all .15s ease;
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
+@media (max-width: 1080px) {
+  .admit-goal-card {
+    grid-column: 1 / -1;
+  }
 }
-nav.tabs button:hover{
-  color:var(--ink);
-  transform:translateY(-1px);
-  border-color:var(--ink-soft);
+
+.admit-goal-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
-nav.tabs button.active{
-  background:var(--ink);
-  color:var(--paper);
-  border-color:var(--ink);
-  box-shadow:0 3px 0 var(--shadow);
+
+.goal-icon-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(180, 128, 31, 0.14);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-nav.tabs button.tab-arena{
-  border-color:var(--gold);
-  color:var(--gold);
+
+.admit-goal-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink);
 }
-nav.tabs button.tab-arena.active{
-  background:var(--gold);
-  color:#fff;
-  border-color:var(--gold);
+
+.goal-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: pulse-ring 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  margin-left: auto;
+}
+
+.admit-card .goal {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+/* Individual Stat Cards */
+.admit-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--paper-1);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  transition: all .15s ease;
+}
+.admit-stat-item:hover {
+  background: var(--paper-2);
+  transform: translateY(-1px);
+  border-color: rgba(31, 42, 68, 0.2);
+}
+
+.stat-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stat-icon-wrap.icon-gold {
+  background: rgba(180, 128, 31, 0.12);
+  color: var(--gold);
+  border: 1px solid rgba(180, 128, 31, 0.25);
+}
+.stat-icon-wrap.icon-green {
+  background: rgba(63, 122, 78, 0.12);
+  color: var(--green);
+  border: 1px solid rgba(63, 122, 78, 0.25);
+}
+.stat-icon-wrap.icon-navy {
+  background: rgba(31, 42, 68, 0.08);
+  color: var(--ink);
+  border: 1px solid var(--card-border);
+}
+.stat-icon-wrap.icon-red {
+  background: rgba(181, 56, 44, 0.12);
+  color: var(--red-soft);
+  border: 1px solid rgba(181, 56, 44, 0.25);
+}
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.admit-stat-item .n {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#statAccuracy {
+  color: var(--green);
+}
+#statWeakest {
+  color: var(--red-soft);
+  font-size: 16px;
+}
+
+.admit-stat-item .l {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink-soft);
+  font-weight: 700;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+/* ---------- Nav Tabs (Stationery Index Tabs) ---------- */
+nav.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+  border-bottom: 2px solid var(--card-border);
+  padding-bottom: 8px;
+}
+
+nav.tabs button {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+  border-radius: 8px;
+  padding: 8px 13px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(31, 42, 68, 0.04);
+}
+
+nav.tabs button .tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+  transition: color .15s ease;
+}
+
+nav.tabs button .tab-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  transition: all .15s ease;
+}
+
+nav.tabs button:hover {
+  color: var(--ink);
+  transform: translateY(-1px);
+  border-color: var(--ink-soft);
+  box-shadow: 0 3px 0 var(--shadow);
+}
+nav.tabs button:hover .tab-icon {
+  color: var(--ink);
+}
+
+nav.tabs button.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+  box-shadow: 0 3px 0 var(--shadow);
+}
+nav.tabs button.active .tab-icon {
+  color: var(--gold);
+}
+nav.tabs button.active .tab-num {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+nav.tabs button.tab-arena {
+  border-color: rgba(180, 128, 31, 0.45);
+  color: var(--gold);
+}
+nav.tabs button.tab-arena .tab-icon {
+  color: var(--gold);
+}
+nav.tabs button.tab-arena .tab-num {
+  background: rgba(180, 128, 31, 0.14);
+  color: var(--gold);
+}
+
+nav.tabs button.tab-arena:hover {
+  border-color: var(--gold);
+}
+
+nav.tabs button.tab-arena.active {
+  background: var(--gold);
+  color: #ffffff;
+  border-color: var(--gold);
+  box-shadow: 0 3px 0 rgba(180, 128, 31, 0.35);
+}
+nav.tabs button.tab-arena.active .tab-icon {
+  color: #ffffff;
+}
+nav.tabs button.tab-arena.active .tab-num {
+  background: rgba(0, 0, 0, 0.18);
+  color: #ffffff;
 }
 
 .panel{ display:none; animation: fade .25s ease; }
