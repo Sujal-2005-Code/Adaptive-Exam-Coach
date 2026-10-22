@@ -182,17 +182,61 @@ document.getElementById('focusToggle').addEventListener('click', ()=>{
 
 function renderFocusMeter(){
   const w = currentWeights();
-  const maxW = Math.max(...Object.values(w));
+  const maxW = Math.max(...Object.values(w)) || 1;
   const weakest = getTop3Weakest()[0]?.topic;
   const el = document.getElementById('focusMeter');
-  el.innerHTML = TOPICS.map(t=>{
-    const pct = Math.round((w[t]/maxW)*100);
-    const isWeak = t===weakest && weaknessTracker[t].total>0;
-    return `<div class="focus-meter-row">
-      <span class="fm-label" style="color:${TOPIC_COLOR[t]}">${t.slice(0,4)}</span>
-      <div class="fm-track"><div class="fm-fill ${isWeak?'weakest':''}" style="width:${pct}%"></div></div>
-      <span class="fm-pct">${pct}%</span>
-    </div>`;
+  if (!el) return;
+
+  const TOPIC_ICONS = {
+    Math: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19h16M4 5h16M7 5l5 14M17 5l-5 14"/></svg>`,
+    Physics: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(30 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-30 12 12)"/></svg>`,
+    Chemistry: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 2v7.31L4.1 19.34A2 2 0 0 0 5.76 22h12.48a2 2 0 0 0 1.66-2.66L14 9.31V2h-4z"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>`,
+    Biology: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/><path d="M17 6l3-3"/><path d="M4 21l3-3"/></svg>`
+  };
+  const defaultIcon = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
+
+  const TOPIC_NAMES = {
+    Math: "Mathematics",
+    Physics: "Physics",
+    Chemistry: "Chemistry",
+    Biology: "Biology"
+  };
+
+  el.innerHTML = TOPICS.map(t => {
+    const pct = Math.round((w[t] / maxW) * 100);
+    const isWeak = t === weakest && weaknessTracker[t] && weaknessTracker[t].total > 0;
+    const color = TOPIC_COLOR[t] || "var(--ink)";
+    const icon = TOPIC_ICONS[t] || defaultIcon;
+    const name = TOPIC_NAMES[t] || t;
+    
+    let priorityBadge = '';
+    if (isWeak) {
+      priorityBadge = `<span class="fm-priority-chip chip-weakest">🔥 Focus Area</span>`;
+    } else if (pct >= 80) {
+      priorityBadge = `<span class="fm-priority-chip chip-active">⚡ Active Weight</span>`;
+    } else {
+      priorityBadge = `<span class="fm-priority-chip chip-balanced">⚖️ Balanced</span>`;
+    }
+
+    return `
+      <div class="focus-meter-row-item ${isWeak ? 'weakest-topic' : ''}">
+        <div class="fm-item-top">
+          <div class="fm-subject-wrap">
+            <span class="fm-subject-icon-box" style="color:${color}; background:${color}18; border-color:${color}33;">
+              ${icon}
+            </span>
+            <span class="fm-subject-label" style="color:var(--ink);">${name}</span>
+          </div>
+          <div class="fm-meta-wrap">
+            ${priorityBadge}
+            <span class="fm-pct-badge" style="color:${isWeak ? 'var(--red-soft)' : color};">${pct}%</span>
+          </div>
+        </div>
+        <div class="fm-track">
+          <div class="fm-fill ${isWeak ? 'weakest' : ''}" style="width:${pct}%; background:${isWeak ? 'var(--red-soft)' : color};"></div>
+        </div>
+      </div>
+    `;
   }).join('');
 }
 
@@ -219,20 +263,31 @@ async function startQuiz(config, isDemo){
   
   active.innerHTML = `
     <div class="q-header">
-      <span class="q-progress" id="qProgress"></span>
-      <span class="badge" id="qTopicBadge"></span>
-      <span class="badge" id="qSubtopicBadge" style="background:var(--paper-2); border:1px solid var(--card-border); display:none;"></span>
-      <span class="badge" id="qDiffBadge"></span>
-      <span class="badge" id="qTimerText" style="margin-left:auto; font-family:'IBM Plex Mono',monospace; background:var(--gold); display:none;"></span>
+      <div class="q-header-meta">
+        <span class="q-progress" id="qProgress"></span>
+        <span class="badge" id="qTopicBadge"></span>
+        <span class="badge" id="qSubtopicBadge" style="background:var(--paper-2); border:1px solid var(--card-border); display:none;"></span>
+        <span class="badge" id="qDiffBadge"></span>
+      </div>
+      <span class="badge timer-badge" id="qTimerText" style="margin-left:auto; font-family:'IBM Plex Mono',monospace; background:var(--gold); display:none;"></span>
     </div>
     <div class="q-text" id="qText"></div>
     <div class="options" id="qOptions"></div>
-    <div id="qHintBox" style="display:none; margin: 10px 0; padding: 12px; background: var(--paper-2); border-left: 3px solid var(--gold); font-size: 14px; border-radius: 4px;"></div>
+    <div id="qHintBox" style="display:none; margin: 12px 0; padding: 14px 16px; background: var(--paper-2); border-left: 3px solid var(--gold); font-size: 14px; border-radius: 6px;"></div>
     <div class="explain-box" id="qExplain"></div>
     <div class="quiz-actions">
-      <button class="btn secondary" id="qHintBtn">💡 Get Hint</button>
-      <button class="btn secondary" id="quitQuizBtn">End Quiz</button>
-      <button class="btn" id="nextQBtn" disabled>Next Question →</button>
+      <button class="btn secondary" id="qHintBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:text-bottom; margin-right:4px;"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6h8c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z"/></svg>
+        <span>Get Hint</span>
+      </button>
+      <button class="btn secondary" id="quitQuizBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:text-bottom; margin-right:4px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>End Quiz</span>
+      </button>
+      <button class="btn" id="nextQBtn" disabled>
+        <span>Next Question</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:text-bottom; margin-left:4px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
     </div>`;
     
   if (quiz.timerSeconds > 0) {
@@ -444,7 +499,9 @@ function renderQuestion(){
   document.getElementById('qHintBox').innerHTML = '';
 
   document.getElementById('nextQBtn').disabled = true;
-  document.getElementById('nextQBtn').textContent = quiz.index+1 >= quiz.n ? 'Finish Quiz →' : 'Next Question →';
+  document.getElementById('nextQBtn').innerHTML = quiz.index+1 >= quiz.n 
+    ? `<span>Finish Quiz</span> <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:text-bottom; margin-left:4px;"><polyline points="20 6 9 17 4 12"/></svg>`
+    : `<span>Next Question</span> <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:text-bottom; margin-left:4px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
   document.getElementById('nextQBtn').onclick = ()=>{
     quiz.index++;
     if(quiz.index >= quiz.n){ endQuiz(); } else { fetchNextQuestion(); }

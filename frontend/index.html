@@ -229,75 +229,183 @@
 
   <!-- ================= QUIZ PANEL ================= -->
   <section class="panel active" id="panel-quiz">
-    <h2 class="section-title">Adaptive Quiz Engine</h2>
-    <p class="section-sub">Starts with mixed topics, tracks your performance, and adapts the next question toward what you actually got wrong. More wrong → more practice on that topic.</p>
+    <div class="section-header-wrap">
+      <div class="section-tag-pill">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>Socratic Diagnostic Engine</span>
+      </div>
+      <h2 class="section-title">Adaptive Quiz Engine</h2>
+      <p class="section-sub">Starts with mixed topics, tracks your performance, and dynamically targets what you actually got wrong. More wrong → more deliberate practice on that specific topic.</p>
+    </div>
 
     <div class="grid-2">
       <div>
-        <div class="card" id="quizCard">
-          <div class="empty" id="quizEmpty" style="text-align: left;">
-            <div class="big" style="text-align: center;">📝</div>
-            <p style="text-align: center; margin-bottom: 20px;">Ready when you are. Start a quiz to begin.</p>
-            
-            <div style="background: var(--paper-2); padding: 15px; border-radius: 8px; border: 1px solid var(--card-border); margin-bottom: 15px;">
-              <h4 style="margin:0 0 10px 0;">Quiz Settings</h4>
-              
-              <div style="margin-bottom: 10px;">
-                <label style="display:block; font-size:12px; margin-bottom:4px; font-weight:600;">Mode</label>
-                <select id="quizModeSelect" style="width:100%; padding:8px; border-radius:4px; border:1px solid var(--card-border); background:var(--paper-1); color:var(--ink);">
-                  <option value="adaptive">🤖 Adaptive Coach (Targets Weaknesses)</option>
-                  <option value="custom">⚙️ Custom Manual Setup</option>
-                </select>
+        <div class="card quiz-main-card" id="quizCard">
+          <div class="empty" id="quizEmpty">
+            <!-- Scholarly Hero Banner -->
+            <div class="quiz-hero-banner">
+              <div class="quiz-hero-icon-box">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
               </div>
-
-              <div id="customQuizSettings" style="display:none;">
-                <div style="margin-bottom: 10px;">
-                  <label style="display:block; font-size:12px; margin-bottom:4px; font-weight:600;">Question Format</label>
-                  <select id="customFormatSelect" style="width:100%; padding:8px; border-radius:4px; border:1px solid var(--card-border); background:var(--paper-1); color:var(--ink);">
-                    <option value="mix">Mix (All Formats)</option>
-                    <option value="mcq">Multiple Choice</option>
-                    <option value="tf">True / False</option>
-                    <option value="sata">Select All That Apply</option>
-                    <option value="short">Short Answer</option>
-                  </select>
+              <div class="quiz-hero-info">
+                <div class="quiz-hero-tag">
+                  <span class="live-dot-pulse"></span>
+                  <span>Adaptive Weakness Targeting</span>
                 </div>
-                <div style="margin-bottom: 10px;">
-                  <label style="display:block; font-size:12px; margin-bottom:4px; font-weight:600;">Subject</label>
-                  <select id="customSubjectSelect" style="width:100%; padding:8px; border-radius:4px; border:1px solid var(--card-border); background:var(--paper-1); color:var(--ink);">
-                    <option value="All">All Subjects (Mixed)</option>
-                    <option value="Math">Math</option>
-                    <option value="Physics">Physics</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Biology">Biology</option>
-                  </select>
-                </div>
-                <div style="margin-bottom: 10px;">
-                  <label style="display:block; font-size:12px; margin-bottom:4px; font-weight:600;">Topic</label>
-                  <select id="customTopicSelect" disabled style="width:100%; padding:8px; border-radius:4px; border:1px solid var(--card-border); background:var(--paper-1); color:var(--ink);">
-                    <option value="All">All Topics</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label style="display:block; font-size:12px; margin-bottom:4px; font-weight:600;">Number of Questions</label>
-                <input type="number" id="quizCountInput" value="5" min="1" max="20" style="width:100%; padding:8px; border-radius:4px; border:1px solid var(--card-border); background:var(--paper-1); color:var(--ink);">
-              </div>
-              <div style="margin-top: 10px;">
-                <label style="display:block; font-size:12px; margin-bottom:4px; font-weight:600;">Time Limit (Whole Quiz)</label>
-                <select id="quizTimerSelect" style="width:100%; padding:8px; border-radius:4px; border:1px solid var(--card-border); background:var(--paper-1); color:var(--ink);">
-                  <option value="0">No Timer (Relaxed)</option>
-                  <option value="60">1 Minute (Speed Run)</option>
-                  <option value="180">3 Minutes (Pressure)</option>
-                  <option value="300">5 Minutes (Standard)</option>
-                  <option value="600">10 Minutes (Endurance)</option>
-                </select>
+                <h3 class="quiz-hero-heading">Personalized Exam Practice Engine</h3>
+                <p class="quiz-hero-desc">
+                  Calibrated for competitive exams. The engine algorithmically adjusts question difficulty and subject weighting in real time according to your historical accuracy.
+                </p>
               </div>
             </div>
 
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-              <button class="btn" id="startQuizBtn">Start Quiz</button>
-              <button class="btn secondary" id="startDemoBtn">🎓 Judge Demo Mode</button>
+            <!-- Quiz Settings Stationery Box -->
+            <div class="quiz-settings-panel">
+              <div class="quiz-settings-header">
+                <div class="quiz-settings-title">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  </svg>
+                  <span>Assessment Configuration</span>
+                </div>
+                <span class="quiz-config-pill">Auto-Calibrated</span>
+              </div>
+
+              <!-- Mode Selection -->
+              <div class="quiz-field-group">
+                <label class="quiz-field-label" for="quizModeSelect">
+                  <span class="quiz-label-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                  </span>
+                  <span>Test Mode</span>
+                </label>
+                <div class="custom-select-wrap">
+                  <select id="quizModeSelect" class="quiz-custom-select">
+                    <option value="adaptive">🎯 Adaptive Coach (Dynamically Targets Weaknesses)</option>
+                    <option value="custom">⚙️ Custom Manual Setup (Pick Subject, Topic & Format)</option>
+                  </select>
+                  <span class="select-chevron">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Custom Manual Settings -->
+              <div id="customQuizSettings" class="custom-quiz-grid" style="display:none;">
+                <div class="quiz-field-group">
+                  <label class="quiz-field-label" for="customFormatSelect">
+                    <span class="quiz-label-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    </span>
+                    <span>Question Format</span>
+                  </label>
+                  <div class="custom-select-wrap">
+                    <select id="customFormatSelect" class="quiz-custom-select">
+                      <option value="mix">Mix (All Formats)</option>
+                      <option value="mcq">Multiple Choice (MCQ)</option>
+                      <option value="tf">True / False</option>
+                      <option value="sata">Select All That Apply (SATA)</option>
+                      <option value="short">Short Answer (Freeform)</option>
+                    </select>
+                    <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                  </div>
+                </div>
+
+                <div class="quiz-field-group">
+                  <label class="quiz-field-label" for="customSubjectSelect">
+                    <span class="quiz-label-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    </span>
+                    <span>Subject</span>
+                  </label>
+                  <div class="custom-select-wrap">
+                    <select id="customSubjectSelect" class="quiz-custom-select">
+                      <option value="All">All Subjects (Mixed)</option>
+                      <option value="Math">Math</option>
+                      <option value="Physics">Physics</option>
+                      <option value="Chemistry">Chemistry</option>
+                      <option value="Biology">Biology</option>
+                    </select>
+                    <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                  </div>
+                </div>
+
+                <div class="quiz-field-group">
+                  <label class="quiz-field-label" for="customTopicSelect">
+                    <span class="quiz-label-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                    </span>
+                    <span>Subtopic</span>
+                  </label>
+                  <div class="custom-select-wrap">
+                    <select id="customTopicSelect" disabled class="quiz-custom-select">
+                      <option value="All">All Topics</option>
+                    </select>
+                    <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Two Column Settings: Questions Count + Timer -->
+              <div class="quiz-params-row">
+                <div class="quiz-field-group">
+                  <label class="quiz-field-label" for="quizCountInput">
+                    <span class="quiz-label-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    </span>
+                    <span>Questions Count</span>
+                  </label>
+                  <div class="quiz-input-stepper">
+                    <input type="number" id="quizCountInput" value="5" min="1" max="20" class="quiz-number-input">
+                    <div class="count-presets">
+                      <button type="button" class="preset-btn" onclick="document.getElementById('quizCountInput').value=5">5</button>
+                      <button type="button" class="preset-btn" onclick="document.getElementById('quizCountInput').value=10">10</button>
+                      <button type="button" class="preset-btn" onclick="document.getElementById('quizCountInput').value=15">15</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="quiz-field-group">
+                  <label class="quiz-field-label" for="quizTimerSelect">
+                    <span class="quiz-label-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </span>
+                    <span>Time Limit</span>
+                  </label>
+                  <div class="custom-select-wrap">
+                    <select id="quizTimerSelect" class="quiz-custom-select">
+                      <option value="0">⏳ No Timer (Relaxed Practice)</option>
+                      <option value="60">⚡ 1 Minute (Rapid Speed Run)</option>
+                      <option value="180">⏱️ 3 Minutes (Exam Pressure)</option>
+                      <option value="300">⏰ 5 Minutes (Standard Test)</option>
+                      <option value="600">⌛ 10 Minutes (Endurance)</option>
+                    </select>
+                    <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="quiz-actions-container">
+              <button class="btn btn-start-quiz" id="startQuizBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>Start Adaptive Quiz</span>
+              </button>
+              <button class="btn btn-demo-quiz" id="startDemoBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                  <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                </svg>
+                <span>Judge Demo Mode</span>
+              </button>
             </div>
           </div>
           <div id="quizActive" style="display:none;">
@@ -330,18 +438,97 @@
       </div>
 
       <div>
-        <div class="card">
-          <h3>🎯 Focus Meter <span class="badge">live weighting</span></h3>
-          <p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 12px;">How much the coach currently leans into each topic when picking your next question.</p>
-          <div id="focusMeter"></div>
+        <!-- Focus Meter Card -->
+        <div class="card focus-meter-panel">
+          <div class="panel-card-header">
+            <div class="panel-card-title-group">
+              <div class="panel-card-icon icon-gold">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="6"></circle>
+                  <circle cx="12" cy="12" r="2"></circle>
+                </svg>
+              </div>
+              <div>
+                <h3 class="panel-card-title">Focus Meter</h3>
+                <p class="panel-card-sub">Real-time adaptive weight per topic</p>
+              </div>
+            </div>
+            <span class="badge badge-radar">
+              <span class="radar-dot"></span> Live Weighting
+            </span>
+          </div>
+
+          <p class="focus-meter-desc">
+            Calculates how much the coach currently leans into each subject. High percentages indicate weak areas prioritized for upcoming questions.
+          </p>
+
+          <div id="focusMeter" class="focus-meter-body"></div>
+
+          <div class="focus-meter-hint">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <span>Accuracy shifts weighting: Answer correctly to master topics.</span>
+          </div>
         </div>
-        <div class="card">
-          <h3>🛡️ Mandatory Refusals</h3>
-          <ul style="margin:0; padding-left:18px; font-size:12.5px; color:var(--ink-soft); line-height:1.7;">
-            <li>Direct answers during an active quiz</li>
-            <li>Predicting exact exam questions</li>
-            <li>Guaranteeing marks or results</li>
-          </ul>
+
+        <!-- Mandatory Refusals Card -->
+        <div class="card refusals-panel">
+          <div class="panel-card-header">
+            <div class="panel-card-title-group">
+              <div class="panel-card-icon icon-red">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <path d="M9 12l2 2 4-4"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="panel-card-title">Mandatory Refusals</h3>
+                <p class="panel-card-sub">Academic Integrity & Ethical Standards</p>
+              </div>
+            </div>
+            <span class="badge badge-refusal-tag">Ethical AI</span>
+          </div>
+
+          <div class="refusals-card-grid">
+            <div class="refusal-box">
+              <div class="refusal-box-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <div class="refusal-box-body">
+                <div class="refusal-box-title">Zero Active Quiz Spoilers</div>
+                <div class="refusal-box-text">Direct test answers and solutions are strictly refused during quizzes to ensure authentic problem solving.</div>
+              </div>
+            </div>
+
+            <div class="refusal-box">
+              <div class="refusal-box-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              </div>
+              <div class="refusal-box-body">
+                <div class="refusal-box-title">No Exam Leaks or Predictions</div>
+                <div class="refusal-box-text">The coach rejects any prompts asking to predict exact leaked questions or confidential exam papers.</div>
+              </div>
+            </div>
+
+            <div class="refusal-box">
+              <div class="refusal-box-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
+              </div>
+              <div class="refusal-box-body">
+                <div class="refusal-box-title">No Score Guarantees</div>
+                <div class="refusal-box-text">Promotes deliberate concept mastery and intellectual growth instead of deceptive shortcut promises.</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
