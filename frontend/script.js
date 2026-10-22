@@ -155,15 +155,23 @@ function todayStr(){ const d = new Date(); return d.toLocaleDateString(undefined
 
 // ================= SIDEBAR MENU & UNIFIED TABS CONTROLS =================
 const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+const sidebarEdgeToggleBtn = document.getElementById('sidebarEdgeToggleBtn');
 const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
 const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-const appLayout = document.getElementById('appLayout');
 
 function toggleSidebar() {
   if (window.innerWidth <= 1024) {
     document.body.classList.toggle('sidebar-open');
   } else {
-    if (appLayout) appLayout.classList.toggle('sidebar-collapsed');
+    const layout = document.getElementById('appLayout') || document.querySelector('.app-layout');
+    const edgeBtn = document.getElementById('sidebarEdgeToggleBtn');
+    if (layout) {
+      const isCollapsed = layout.classList.toggle('sidebar-collapsed');
+      if (edgeBtn) {
+        edgeBtn.title = isCollapsed ? "Show Sidebar Menu (Bring from Left)" : "Hide Sidebar Menu (Scroll to Left)";
+        edgeBtn.setAttribute('aria-expanded', String(!isCollapsed));
+      }
+    }
   }
 }
 
@@ -171,7 +179,11 @@ function closeSidebar() {
   document.body.classList.remove('sidebar-open');
 }
 
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
+
 if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', toggleSidebar);
+if (sidebarEdgeToggleBtn) sidebarEdgeToggleBtn.addEventListener('click', toggleSidebar);
 if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
 if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
 

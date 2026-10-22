@@ -57,6 +57,7 @@ body{
   min-height: 100vh;
   position: relative;
   width: 100%;
+  overflow-x: hidden;
 }
 
 .app-main-content {
@@ -65,7 +66,7 @@ body{
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-backdrop {
@@ -100,7 +101,8 @@ body.sidebar-open .sidebar-backdrop {
   flex-direction: column;
   z-index: 950;
   overflow-y: auto;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease;
+  will-change: margin-left;
 }
 :root.dark .sidebar-menu {
   background: var(--card);
@@ -108,6 +110,53 @@ body.sidebar-open .sidebar-backdrop {
 }
 .app-layout.sidebar-collapsed .sidebar-menu {
   margin-left: -275px;
+  pointer-events: none;
+}
+
+/* Left-Center Side Scroll / Drawer Toggle Tab (Desktop) */
+.sidebar-edge-toggle {
+  position: fixed;
+  top: 50%;
+  left: 275px;
+  transform: translateY(-50%);
+  z-index: 1200;
+  width: 30px;
+  height: 68px;
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+  border-left: none;
+  border-radius: 0 16px 16px 0;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 3px 0 12px rgba(31, 42, 68, 0.09);
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  outline: none;
+  padding: 0;
+}
+.sidebar-edge-toggle:hover {
+  background: var(--paper-2);
+  color: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 4px 0 16px rgba(180, 128, 31, 0.28);
+  width: 35px;
+}
+.sidebar-edge-toggle:active {
+  transform: translateY(-50%) scale(0.94);
+}
+.edge-toggle-icon {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  color: inherit;
+  display: block;
+}
+.app-layout.sidebar-collapsed .sidebar-edge-toggle {
+  left: 0px;
+  box-shadow: 4px 0 14px rgba(31, 42, 68, 0.15);
+}
+.app-layout.sidebar-collapsed .sidebar-edge-toggle .edge-toggle-icon {
+  transform: rotate(180deg);
 }
 
 .sidebar-header {
@@ -499,7 +548,23 @@ body.sidebar-open .sidebar-backdrop {
   box-shadow: 0 2px 5px var(--shadow);
 }
 
+/* On desktop (> 1024px), hide topbar hamburger button and show side scroll toggle */
+@media (min-width: 1025px) {
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+  .sidebar-edge-toggle {
+    display: flex;
+  }
+}
+
 @media (max-width: 1024px) {
+  .sidebar-edge-toggle {
+    display: none !important;
+  }
+  .sidebar-toggle-btn {
+    display: flex;
+  }
   .sidebar-menu {
     position: fixed;
     top: 0;
