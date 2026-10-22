@@ -153,19 +153,72 @@ function currentWeights(){
 function fmt(n){ return (n*100).toFixed(0)+"%"; }
 function todayStr(){ const d = new Date(); return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + " " + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
 
-// Tabs & UI
-document.getElementById('tabs').addEventListener('click', e=>{
-  const btn = e.target.closest('button[data-tab]');
-  if(!btn) return;
-  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
-  if(btn.dataset.tab==='dashboard') renderDashboard();
-  if(btn.dataset.tab==='plan') renderPlan();
-  if(btn.dataset.tab==='history') renderHistory();
-  if(btn.dataset.tab==='resources') renderResources();
-});
+// ================= SIDEBAR MENU & UNIFIED TABS CONTROLS =================
+const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+const appLayout = document.getElementById('appLayout');
+
+function toggleSidebar() {
+  if (window.innerWidth <= 1024) {
+    document.body.classList.toggle('sidebar-open');
+  } else {
+    if (appLayout) appLayout.classList.toggle('sidebar-collapsed');
+  }
+}
+
+function closeSidebar() {
+  document.body.classList.remove('sidebar-open');
+}
+
+if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', toggleSidebar);
+if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
+if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
+
+window.switchActiveTab = function(tabName) {
+  if (!tabName) return;
+  // Update visible sidebar navigation
+  document.querySelectorAll('#sidebarTabs .sidebar-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tabName);
+  });
+  // Update legacy tabs for backward compatibility
+  document.querySelectorAll('nav.tabs button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tabName);
+  });
+  // Update panels
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const targetPanel = document.getElementById('panel-' + tabName);
+  if (targetPanel) targetPanel.classList.add('active');
+
+  // Lazy render modules
+  if (tabName === 'dashboard' && typeof renderDashboard === 'function') renderDashboard();
+  if (tabName === 'plan' && typeof renderPlan === 'function') renderPlan();
+  if (tabName === 'history' && typeof renderHistory === 'function') renderHistory();
+  if (tabName === 'resources' && typeof renderResources === 'function') renderResources();
+
+  // On small viewports, auto close off-canvas sidebar
+  if (window.innerWidth <= 1024) {
+    closeSidebar();
+  }
+};
+
+const tabsEl = document.getElementById('tabs');
+if (tabsEl) {
+  tabsEl.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-tab]');
+    if (!btn) return;
+    window.switchActiveTab(btn.dataset.tab);
+  });
+}
+
+const sidebarTabsEl = document.getElementById('sidebarTabs');
+if (sidebarTabsEl) {
+  sidebarTabsEl.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-tab]');
+    if (!btn) return;
+    window.switchActiveTab(btn.dataset.tab);
+  });
+}
 
 document.getElementById('themeToggle').addEventListener('click', ()=>{
   document.documentElement.classList.toggle('dark');
@@ -812,11 +865,27 @@ window.setCoachLockState = function(locked) {
   isQuizActive = locked;
   const floatBtn = document.getElementById('coachFloatingBtn');
   const headerBtn = document.getElementById('coachHeaderBtn');
+  const sidebarCoachBtn = document.getElementById('sidebarCoachBtn');
   const drawer = document.getElementById('coachDrawer');
   const helperBanner = document.querySelector('.quiz-coach-helper-banner');
 
   if (locked) {
     if (drawer) drawer.style.display = 'none';
+
+    if (sidebarCoachBtn) {
+      sidebarCoachBtn.classList.add('coach-locked');
+      sidebarCoachBtn.title = "AI Coach is disabled during active quiz to prevent cheating.";
+      const sub = document.getElementById('sidebarCoachSub');
+      if (sub) {
+        sub.textContent = "🔒 Exam Locked";
+        sub.style.color = "var(--red-soft)";
+      }
+      const beacon = document.getElementById('sidebarCoachBeacon');
+      if (beacon) {
+        beacon.style.background = "var(--red-soft)";
+        beacon.style.boxShadow = "0 0 0 3px rgba(181, 56, 44, 0.25)";
+      }
+    }
 
     if (floatBtn) {
       floatBtn.classList.add('coach-locked');
@@ -848,6 +917,21 @@ window.setCoachLockState = function(locked) {
       `;
     }
   } else {
+    if (sidebarCoachBtn) {
+      sidebarCoachBtn.classList.remove('coach-locked');
+      sidebarCoachBtn.title = "Open Socratic AI Coach";
+      const sub = document.getElementById('sidebarCoachSub');
+      if (sub) {
+        sub.textContent = "Hints & Concepts";
+        sub.style.color = "var(--ink-soft)";
+      }
+      const beacon = document.getElementById('sidebarCoachBeacon');
+      if (beacon) {
+        beacon.style.background = "var(--green)";
+        beacon.style.boxShadow = "0 0 0 3px rgba(63, 122, 78, 0.2)";
+      }
+    }
+
     if (floatBtn) {
       floatBtn.classList.remove('coach-locked');
       floatBtn.title = "Ask AI Coach";
@@ -904,6 +988,9 @@ if (coachFloatingBtn) coachFloatingBtn.addEventListener('click', window.toggleCo
 
 const coachHeaderBtn = document.getElementById('coachHeaderBtn');
 if (coachHeaderBtn) coachHeaderBtn.addEventListener('click', window.toggleCoachDrawer);
+
+const sidebarCoachBtn = document.getElementById('sidebarCoachBtn');
+if (sidebarCoachBtn) sidebarCoachBtn.addEventListener('click', window.toggleCoachDrawer);
 
 const coachCloseBtn = document.getElementById('coachCloseBtn');
 if (coachCloseBtn) coachCloseBtn.addEventListener('click', () => {
@@ -1216,6 +1303,8 @@ async function initializeApp() {
     document.getElementById('authOverlay').style.display = 'none';
     document.getElementById('logoutBtn').style.display = 'inline-block';
     document.getElementById('welcomeUser').textContent = `Hi, ${currentUser}`;
+    const sideProf = document.getElementById('sidebarProfileName');
+    if (sideProf) sideProf.textContent = currentUser ? `Hi, ${currentUser}` : 'Hi, Student';
 
     try {
         const res = await fetch(`${API_BASE}/data`, {
@@ -1490,9 +1579,12 @@ function handleLogout() {
     localStorage.removeItem('aec_user');
     window.location.href = 'landing.html';
 }
-document.getElementById('logoutBtn').onclick = handleLogout;
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) logoutBtn.onclick = handleLogout;
+const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
+if (sidebarLogoutBtn) sidebarLogoutBtn.onclick = handleLogout;
 
-document.getElementById('welcomeUserBtn').onclick = () => {
+function openCandidateProfileModal() {
     document.getElementById('profileDisplayUsername').textContent = currentUser;
     document.getElementById('profileDisplayEmail').textContent = userEmail || 'No email provided';
     document.getElementById('profileDisplayGradeText').textContent = userGrade;
@@ -1502,7 +1594,11 @@ document.getElementById('welcomeUserBtn').onclick = () => {
     document.getElementById('editProfileBtn').style.display = 'block';
     document.getElementById('profileEditMode').style.display = 'none';
     document.getElementById('profileOverlay').style.display = 'flex';
-};
+}
+const welcomeUserBtn = document.getElementById('welcomeUserBtn');
+if (welcomeUserBtn) welcomeUserBtn.onclick = openCandidateProfileModal;
+const sidebarProfileCard = document.getElementById('sidebarProfileCard');
+if (sidebarProfileCard) sidebarProfileCard.onclick = openCandidateProfileModal;
 
 document.getElementById('editProfileBtn').onclick = () => {
     document.getElementById('profileViewMode').style.display = 'none';

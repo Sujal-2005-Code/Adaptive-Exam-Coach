@@ -124,179 +124,296 @@
       <div id="profileSaveMsg" style="text-align:center; margin-top:10px; font-size:13px; color:var(--green); display:none;">Saved successfully!</div>
     </div>
   </div>
-</div>
+</div><!-- ================= APP LAYOUT WITH SIDEBAR MENU ================= -->
+<div class="app-layout" id="appLayout">
 
-<header class="topbar-container">
-  <div class="topbar-inner">
-    <a href="landing.html" class="brand" title="Return to Landing Page">
-      <div class="stamp">A+</div>
-      <div class="brand-text-wrap">
-        <h1 class="brand-title">SmartPrep AI</h1>
-        <p class="brand-subtitle">Adaptive Exam Coach · Real-Time Weakness Targeting</p>
-      </div>
-    </a>
-    
-    <div class="topbar-center-status">
-      <div id="streakDisplay" class="header-status-pill streak-pill" title="Current Daily Streak">
-        🔥 <span id="streakCount">0</span> <span class="pill-label">Days</span>
-      </div>
-      <div id="xpDisplay" class="header-status-pill xp-pill" title="Earned Practice XP">
-        ⭐ <span id="xpCount">0</span> <span class="pill-label">XP</span>
-      </div>
-    </div>
+  <!-- Mobile Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" title="Close Menu"></div>
 
-    <div class="top-controls">
-      <button id="welcomeUserBtn" class="user-profile-btn" title="View Profile">
-        <span class="user-avatar-circle">👤</span>
-        <span id="welcomeUser" class="username-text">Student</span>
-      </button>
-      <button class="icon-btn coach-header-toggle" id="coachHeaderBtn" title="Open AI Coach">
-        🎓 <span class="btn-text">Coach</span>
-      </button>
-      <button class="icon-btn" id="focusToggle" title="Toggle Focus Mode">🎯 Focus</button>
-      <button class="icon-btn" id="themeToggle" title="Toggle Theme">🌙</button>
-      <button class="icon-btn logout-btn" id="logoutBtn" title="Logout" style="display:none;">🚪</button>
-    </div>
-  </div>
-</header>
-
-<div class="wrap">
-
-  <div class="admit-card">
-    <div class="admit-goal-card">
-      <div class="admit-goal-header">
-        <div class="goal-icon-circle">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <circle cx="12" cy="12" r="6"></circle>
-            <circle cx="12" cy="12" r="2"></circle>
-          </svg>
+  <!-- Sidebar Menu Navigation -->
+  <aside class="sidebar-menu" id="sidebarMenu">
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <a href="landing.html" class="sidebar-brand" title="Return to Landing Page">
+        <div class="stamp sidebar-stamp">A+</div>
+        <div class="sidebar-brand-text">
+          <span class="sidebar-brand-title">SmartPrep AI</span>
+          <span class="sidebar-brand-badge">Academic Docket</span>
         </div>
-        <div class="admit-goal-tag">Active Objective</div>
-        <span class="goal-pulse-dot"></span>
-      </div>
-      <div class="goal">Dynamically identify student weak topics, adapt practice difficulty, and maximize learning velocity.</div>
-    </div>
-    
-    <div class="admit-stat-item">
-      <div class="stat-icon-wrap icon-gold">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10 9 9 9 8 9"></polyline>
+      </a>
+      <button id="sidebarCloseBtn" class="sidebar-close-btn" title="Close Sidebar" aria-label="Close Sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
+      </button>
+    </div>
+
+    <!-- Scrollable Sidebar Content -->
+    <div class="sidebar-content">
+      <!-- 1. Candidate Profile Card (from Image 2) -->
+      <div class="sidebar-section">
+        <div class="sidebar-profile-card" id="sidebarProfileCard" role="button" tabindex="0" title="Click to view or edit Candidate Profile">
+          <div class="profile-card-avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="profile-online-indicator"></span>
+          </div>
+          <div class="profile-card-info">
+            <div class="profile-card-name" id="sidebarProfileName">Hi, Student</div>
+            <div class="profile-card-tag">Candidate Profile &bull; Edit</div>
+          </div>
+          <div class="profile-card-chevron">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        </div>
       </div>
-      <div class="stat-content">
-        <div class="n" id="statQuizzes">0</div>
-        <div class="l">Quizzes Taken</div>
+
+      <!-- 2. Study Modules Navigation (All 6 options from Image 1) -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Study Modules</div>
+        <nav class="sidebar-nav" id="sidebarTabs">
+          <!-- 1: Adaptive Quiz -->
+          <button type="button" data-tab="quiz" class="sidebar-tab-btn active">
+            <span class="tab-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </span>
+            <span class="tab-badge-num">1</span>
+            <span class="tab-label">Adaptive Quiz</span>
+          </button>
+
+          <!-- 2: Dashboard -->
+          <button type="button" data-tab="dashboard" class="sidebar-tab-btn">
+            <span class="tab-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+            </span>
+            <span class="tab-badge-num">2</span>
+            <span class="tab-label">Dashboard</span>
+          </button>
+
+          <!-- 3: Study Plan -->
+          <button type="button" data-tab="plan" class="sidebar-tab-btn">
+            <span class="tab-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                <path d="M9 14l2 2 4-4"></path>
+              </svg>
+            </span>
+            <span class="tab-badge-num">3</span>
+            <span class="tab-label">Study Plan</span>
+          </button>
+
+          <!-- 4: Progress History -->
+          <button type="button" data-tab="history" class="sidebar-tab-btn">
+            <span class="tab-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </span>
+            <span class="tab-badge-num">4</span>
+            <span class="tab-label">Progress History</span>
+          </button>
+
+          <!-- 5: Resources -->
+          <button type="button" data-tab="resources" class="sidebar-tab-btn">
+            <span class="tab-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            </span>
+            <span class="tab-badge-num">5</span>
+            <span class="tab-label">Resources</span>
+          </button>
+
+          <!-- 6: Multiplayer Arena -->
+          <button type="button" data-tab="arena" class="sidebar-tab-btn sidebar-tab-arena">
+            <span class="tab-icon-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path>
+                <path d="M13 19l6 2 2-6-2-2-6 6z"></path>
+                <path d="M9.5 6.5L21 18v3h-3L6.5 9.5"></path>
+              </svg>
+            </span>
+            <span class="tab-badge-num">6</span>
+            <span class="tab-label">Multiplayer Arena</span>
+            <span class="tab-live-pill">LIVE</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- 3. AI Mentorship Section (from Image 2) -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">AI Mentorship</div>
+        <button type="button" class="sidebar-coach-btn" id="sidebarCoachBtn" title="Open Socratic AI Coach">
+          <div class="coach-btn-icon-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+              <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+            </svg>
+          </div>
+          <div class="coach-btn-text">
+            <div class="coach-btn-title">Socratic AI Coach</div>
+            <div class="coach-btn-sub" id="sidebarCoachSub">Hints &amp; Concepts</div>
+          </div>
+          <span class="coach-status-beacon" id="sidebarCoachBeacon"></span>
+        </button>
       </div>
     </div>
 
-    <div class="admit-stat-item">
-      <div class="stat-icon-wrap icon-green">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <div class="n" id="statAccuracy">—</div>
-        <div class="l">Overall Accuracy</div>
-      </div>
+    <!-- 4. Sidebar Footer: Account / Logout (from Image 2) -->
+    <div class="sidebar-footer">
+      <button type="button" class="sidebar-logout-btn" id="sidebarLogoutBtn" title="Log out of account">
+        <span class="logout-icon-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </span>
+        <span class="logout-label">Logout</span>
+      </button>
     </div>
+  </aside>
 
-    <div class="admit-stat-item">
-      <div class="stat-icon-wrap icon-navy">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <div class="n" id="statAnswered">0</div>
-        <div class="l">Questions Answered</div>
-      </div>
-    </div>
+  <!-- Main App Content Container -->
+  <div class="app-main-content">
+    <header class="topbar-container">
+      <div class="topbar-inner">
+        <div class="topbar-left-group">
+          <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Toggle Navigation Sidebar" aria-label="Toggle Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <a href="landing.html" class="brand" title="Return to Landing Page">
+            <div class="stamp">A+</div>
+            <div class="brand-text-wrap">
+              <h1 class="brand-title">SmartPrep AI</h1>
+              <p class="brand-subtitle">Adaptive Exam Coach · Real-Time Weakness Targeting</p>
+            </div>
+          </a>
+        </div>
+        
+        <div class="topbar-center-status">
+          <div id="streakDisplay" class="header-status-pill streak-pill" title="Current Daily Streak">
+            🔥 <span id="streakCount">0</span> <span class="pill-label">Days</span>
+          </div>
+          <div id="xpDisplay" class="header-status-pill xp-pill" title="Earned Practice XP">
+            ⭐ <span id="xpCount">0</span> <span class="pill-label">XP</span>
+          </div>
+        </div>
 
-    <div class="admit-stat-item">
-      <div class="stat-icon-wrap icon-red">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <div class="n" id="statWeakest">—</div>
-        <div class="l">Weakest Topic</div>
-      </div>
-    </div>
-  </div>
+        <div class="top-controls">
+          <button class="icon-btn" id="focusToggle" title="Toggle Focus Mode">🎯 Focus</button>
+          <button class="icon-btn" id="themeToggle" title="Toggle Theme">🌙</button>
 
-  <nav class="tabs" id="tabs">
-    <button data-tab="quiz" class="tab-btn active">
-      <span class="tab-icon">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-        </svg>
-      </span>
-      <span class="tab-num">1</span>
-      <span class="tab-title">Adaptive Quiz</span>
-    </button>
-    <button data-tab="dashboard" class="tab-btn">
-      <span class="tab-icon">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10"></line>
-          <line x1="12" y1="20" x2="12" y2="4"></line>
-          <line x1="6" y1="20" x2="6" y2="14"></line>
-        </svg>
-      </span>
-      <span class="tab-num">2</span>
-      <span class="tab-title">Dashboard</span>
-    </button>
-    <button data-tab="plan" class="tab-btn">
-      <span class="tab-icon">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-          <path d="M9 14l2 2 4-4"></path>
-        </svg>
-      </span>
-      <span class="tab-num">3</span>
-      <span class="tab-title">Study Plan</span>
-    </button>
-    <button data-tab="history" class="tab-btn">
-      <span class="tab-icon">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-        </svg>
-      </span>
-      <span class="tab-num">4</span>
-      <span class="tab-title">Progress History</span>
-    </button>
-    <button data-tab="resources" class="tab-btn">
-      <span class="tab-icon">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-        </svg>
-      </span>
-      <span class="tab-num">5</span>
-      <span class="tab-title">Resources</span>
-    </button>
-    <button data-tab="arena" class="tab-btn tab-arena">
-      <span class="tab-icon">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path>
-          <path d="M13 19l6 2 2-6-2-2-6 6z"></path>
-          <path d="M9.5 6.5L21 18v3h-3L6.5 9.5"></path>
-        </svg>
-      </span>
-      <span class="tab-num">6</span>
-      <span class="tab-title">Multiplayer Arena</span>
-    </button>
-  </nav>
+          <!-- Backwards-compatibility hidden proxies for existing scripts -->
+          <div style="display:none;" aria-hidden="true">
+            <button id="welcomeUserBtn"><span id="welcomeUser">Student</span></button>
+            <button class="icon-btn coach-header-toggle" id="coachHeaderBtn">🎓 Coach</button>
+            <button class="icon-btn logout-btn" id="logoutBtn">🚪</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap">
+
+      <div class="admit-card">
+        <div class="admit-goal-card">
+          <div class="admit-goal-header">
+            <div class="goal-icon-circle">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="6" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+              </svg>
+            </div>
+            <div class="admit-goal-tag">Active Objective</div>
+            <span class="goal-pulse-dot"></span>
+          </div>
+          <div class="goal">Dynamically identify student weak topics, adapt practice difficulty, and maximize learning velocity.</div>
+        </div>
+        
+        <div class="admit-stat-item">
+          <div class="stat-icon-wrap icon-gold">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="n" id="statQuizzes">0</div>
+            <div class="l">Quizzes Taken</div>
+          </div>
+        </div>
+
+        <div class="admit-stat-item">
+          <div class="stat-icon-wrap icon-green">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="n" id="statAccuracy">—</div>
+            <div class="l">Overall Accuracy</div>
+          </div>
+        </div>
+
+        <div class="admit-stat-item">
+          <div class="stat-icon-wrap icon-navy">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="n" id="statAnswered">0</div>
+            <div class="l">Questions Answered</div>
+          </div>
+        </div>
+
+        <div class="admit-stat-item">
+          <div class="stat-icon-wrap icon-red">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="n" id="statWeakest">—</div>
+            <div class="l">Weakest Topic</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden legacy tabs container for 100% backward compatibility with external code & footer links -->
+      <nav class="tabs" id="tabs" style="display:none;" aria-hidden="true">
+        <button data-tab="quiz" class="tab-btn active"><span class="tab-num">1</span>Adaptive Quiz</button>
+        <button data-tab="dashboard" class="tab-btn"><span class="tab-num">2</span>Dashboard</button>
+        <button data-tab="plan" class="tab-btn"><span class="tab-num">3</span>Study Plan</button>
+        <button data-tab="history" class="tab-btn"><span class="tab-num">4</span>Progress History</button>
+        <button data-tab="resources" class="tab-btn"><span class="tab-num">5</span>Resources</button>
+        <button data-tab="arena" class="tab-btn tab-arena"><span class="tab-num">6</span>Multiplayer Arena</button>
+      </nav>
 
   <!-- ================= MULTIPLAYER ARENA ================= -->
   <section class="panel" id="panel-arena">
@@ -806,6 +923,8 @@
     </div>
   </div>
 </footer>
+  </div> <!-- end .app-main-content -->
+</div> <!-- end #appLayout -->
 
 <!-- ================= 9. FLOATING SOCRATIC AI COACH DRAWER ================= -->
 <div id="coachDrawer" class="coach-drawer" style="display:none;">
