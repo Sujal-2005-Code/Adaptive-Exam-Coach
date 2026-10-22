@@ -744,6 +744,39 @@ document.getElementById('chatStopVoiceBtn').addEventListener('click', () => {
 
 document.getElementById('chatSendBtn').addEventListener('click', sendChat);
 document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+
+// ================= FLOATING AI COACH CONTROLS =================
+window.toggleCoachDrawer = function() {
+  const drawer = document.getElementById('coachDrawer');
+  if (!drawer) return;
+  const isHidden = drawer.style.display === 'none' || !drawer.style.display;
+  drawer.style.display = isHidden ? 'flex' : 'none';
+  if (isHidden) {
+    setTimeout(() => {
+      document.getElementById('chatInput')?.focus();
+      const log = document.getElementById('chatLog');
+      if (log) log.scrollTop = log.scrollHeight;
+    }, 60);
+  }
+};
+
+const coachFloatingBtn = document.getElementById('coachFloatingBtn');
+if (coachFloatingBtn) coachFloatingBtn.addEventListener('click', window.toggleCoachDrawer);
+
+const coachHeaderBtn = document.getElementById('coachHeaderBtn');
+if (coachHeaderBtn) coachHeaderBtn.addEventListener('click', window.toggleCoachDrawer);
+
+const coachCloseBtn = document.getElementById('coachCloseBtn');
+if (coachCloseBtn) coachCloseBtn.addEventListener('click', () => {
+  const drawer = document.getElementById('coachDrawer');
+  if (drawer) drawer.style.display = 'none';
+});
+
+const coachMinimizeBtn = document.getElementById('coachMinimizeBtn');
+if (coachMinimizeBtn) coachMinimizeBtn.addEventListener('click', () => {
+  const drawer = document.getElementById('coachDrawer');
+  if (drawer) drawer.style.display = 'none';
+});
 async function sendChat(){
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   const inp = document.getElementById('chatInput');
@@ -1071,6 +1104,8 @@ async function initializeApp() {
             document.getElementById('profileDisplayEmail').textContent = userEmail;
             document.getElementById('profileDisplayGradeText').textContent = userGrade;
             document.getElementById('profileDisplayExamText').textContent = targetExam;
+            const hExam = document.getElementById('headerExamText');
+            if (hExam) hExam.textContent = (targetExam && targetExam !== 'None') ? `${targetExam} Prep` : 'General Prep';
             
             document.getElementById('profileGrade').value = userGrade;
             document.getElementById('profileExam').value = targetExam;
@@ -1360,6 +1395,8 @@ document.getElementById('saveProfileBtn').onclick = async () => {
             
             document.getElementById('profileDisplayGradeText').textContent = grade;
             document.getElementById('profileDisplayExamText').textContent = exam;
+            const hExamSaved = document.getElementById('headerExamText');
+            if (hExamSaved) hExamSaved.textContent = (exam && exam !== 'None') ? `${exam} Prep` : 'General Prep';
             
             const msg = document.getElementById('profileSaveMsg');
             msg.style.display = 'block';

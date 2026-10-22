@@ -126,32 +126,51 @@
   </div>
 </div>
 
-<div class="margin-rule"></div>
-
-<header class="topbar">
-  <a href="landing.html" class="brand" style="text-decoration:none; color:inherit;" title="Return to Landing Page">
-    <div class="stamp">A+</div>
-    <div>
-      <h1>SmartPrep AI - Adaptive Exam Coach</h1>
-      <p>Smart practice · focus on weakness · improve faster</p>
+<header class="topbar-container">
+  <div class="topbar-inner">
+    <a href="landing.html" class="brand" title="Return to Landing Page">
+      <div class="stamp">A+</div>
+      <div class="brand-text-wrap">
+        <h1 class="brand-title">SmartPrep AI</h1>
+        <p class="brand-subtitle">Adaptive Exam Coach · Real-Time Weakness Targeting</p>
+      </div>
+    </a>
+    
+    <div class="topbar-center-status">
+      <div class="header-status-pill" id="headerExamPill" title="Your Target Exam">
+        <span class="pill-icon">🎯</span>
+        <span id="headerExamText">General Prep</span>
+      </div>
+      <div id="streakDisplay" class="header-status-pill streak-pill" title="Current Daily Streak">
+        🔥 <span id="streakCount">0</span> <span class="pill-label">Days</span>
+      </div>
+      <div id="xpDisplay" class="header-status-pill xp-pill" title="Earned Practice XP">
+        ⭐ <span id="xpCount">0</span> <span class="pill-label">XP</span>
+      </div>
     </div>
-  </a>
-  <div class="top-controls">
-    <button id="welcomeUserBtn" style="font-size:13px; font-weight:bold; color:var(--ink); margin-right:10px; background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:5px;" title="View Profile">
-      👤 <span id="welcomeUser" style="text-decoration:underline;"></span>
-    </button>
-    <div id="streakDisplay" style="font-size:13.5px; font-weight:bold; color:var(--red-soft); background:rgba(181,56,44,.1); padding:6px 10px; border-radius:6px; display:flex; align-items:center; gap:4px;">🔥 <span id="streakCount">0</span></div>
-    <div id="xpDisplay" style="font-size:13.5px; font-weight:bold; color:var(--gold); background:rgba(180,128,31,.1); padding:6px 10px; border-radius:6px; display:flex; align-items:center; gap:4px;">⭐ <span id="xpCount">0</span> XP</div>
-    <button class="icon-btn" id="focusToggle" title="Focus mode">🎯 Focus</button>
-    <button class="icon-btn" id="themeToggle" title="Toggle theme">🌙</button>
-    <button class="icon-btn" id="logoutBtn" title="Logout" style="color:var(--red-soft); display:none;">🚪</button>
+
+    <div class="top-controls">
+      <button id="welcomeUserBtn" class="user-profile-btn" title="View Profile">
+        <span class="user-avatar-circle">👤</span>
+        <span id="welcomeUser" class="username-text">Student</span>
+      </button>
+      <button class="icon-btn coach-header-toggle" id="coachHeaderBtn" title="Open AI Coach">
+        🎓 <span class="btn-text">Coach</span>
+      </button>
+      <button class="icon-btn" id="focusToggle" title="Toggle Focus Mode">🎯 Focus</button>
+      <button class="icon-btn" id="themeToggle" title="Toggle Theme">🌙</button>
+      <button class="icon-btn logout-btn" id="logoutBtn" title="Logout" style="display:none;">🚪</button>
+    </div>
   </div>
 </header>
 
 <div class="wrap">
 
   <div class="admit-card">
-    <div class="goal"><b>Goal:</b> help students focus on what they're weak at, track progress, and improve smarter — not harder.</div>
+    <div class="admit-goal-card">
+      <div class="admit-goal-tag">🎯 Active Objective</div>
+      <div class="goal">Dynamically identify student weak topics, adapt practice difficulty, and maximize learning velocity.</div>
+    </div>
     <div class="admit-stat"><div class="n" id="statQuizzes">0</div><div class="l">Quizzes Taken</div></div>
     <div class="admit-stat"><div class="n" id="statAccuracy">—</div><div class="l">Overall Accuracy</div></div>
     <div class="admit-stat"><div class="n" id="statAnswered">0</div><div class="l">Questions Answered</div></div>
@@ -159,12 +178,12 @@
   </div>
 
   <nav class="tabs" id="tabs">
-    <button data-tab="quiz" class="active">1 · Adaptive Quiz</button>
-    <button data-tab="dashboard">2 · Dashboard</button>
-    <button data-tab="plan">3 · Study Plan</button>
-    <button data-tab="history">4 · Progress History</button>
-    <button data-tab="resources">5 · Resources</button>
-    <button data-tab="arena" style="color:var(--gold);">6 · ⚔️ Multiplayer Arena</button>
+    <button data-tab="quiz" class="active">📝 1 · Adaptive Quiz</button>
+    <button data-tab="dashboard">📊 2 · Dashboard</button>
+    <button data-tab="plan">📋 3 · Study Plan</button>
+    <button data-tab="history">📈 4 · Progress History</button>
+    <button data-tab="resources">📚 5 · Resources</button>
+    <button data-tab="arena" class="tab-arena">⚔️ 6 · Multiplayer Arena</button>
   </nav>
 
   <!-- ================= MULTIPLAYER ARENA ================= -->
@@ -303,24 +322,14 @@
           <div id="quizResult" style="display:none;"></div>
         </div>
 
-        <div class="card">
-          <h3>💬 Ask the Coach</h3>
-          <p style="font-size:12.5px;color:var(--ink-soft);margin:-4px 0 10px;">You can ask about concepts anytime. The coach won't hand you direct answers during a live quiz, predict exam questions, or guarantee marks — we help you learn, not cheat.</p>
-          <div class="chat-log" id="chatLog"></div>
-          <div id="chatImagePreview" style="display:none; margin: 0 0 10px 0; position:relative; width:fit-content;">
-            <img id="chatPreviewImg" src="" style="max-height:80px; border-radius:6px; border:1px solid var(--card-border);">
-            <button id="chatClearImgBtn" style="position:absolute; top:-6px; right:-6px; background:var(--red-soft); color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center;">&times;</button>
+        <div class="quiz-coach-helper-banner">
+          <div class="helper-content">
+            <span class="helper-badge">💡 Socratic AI Guidance</span>
+            <span class="helper-text">Stuck on a tricky concept? The AI Coach provides conceptual guidance and diagrams without spoiling test answers.</span>
           </div>
-          <div class="chat-input-row">
-            <input type="text" id="chatInput" placeholder="e.g. 'explain mitochondria' or 'give me the answer'…">
-            <label class="btn secondary" style="cursor:pointer; padding:9px 12px; margin:0;" title="Upload Image">
-              📷
-              <input type="file" id="chatImageInput" accept="image/*" style="display:none;">
-            </label>
-            <button class="btn secondary" id="chatVoiceBtn" style="padding:9px 12px;" title="Voice Assistant">🎤</button>
-            <button class="btn red" id="chatStopVoiceBtn" style="padding:9px 12px; display:none;" title="Stop Reading">🛑</button>
-            <button class="btn" id="chatSendBtn" style="padding:9px 16px;">Send</button>
-          </div>
+          <button type="button" class="btn secondary helper-ask-btn" onclick="toggleCoachDrawer()">
+            🎓 Ask Socratic Coach
+          </button>
         </div>
       </div>
 
@@ -418,9 +427,141 @@
     <div class="res-grid" id="resGrid"></div>
   </section>
 
+</div><!-- End .wrap -->
+
+<!-- ================= 8. RICH INTERNAL APPLICATION FOOTER ================= -->
+<footer class="app-footer">
+  <div class="footer-container">
+    <div class="footer-grid">
+      <!-- Col 1: Brand & Socratic Philosophy -->
+      <div class="footer-col brand-col">
+        <a href="landing.html" class="footer-brand" title="Return to Landing Page">
+          <div class="footer-stamp-logo">A+</div>
+          <div class="brand-text">
+            <span class="footer-brand-title">SmartPrep AI</span>
+          </div>
+        </a>
+        <p class="footer-desc">
+          Your personal AI-powered exam coach. Pinpoints student knowledge gaps, dynamically re-weights practice questions, and promotes deep conceptual mastery.
+        </p>
+        <div class="footer-motto">
+          We help you learn, not cheat. <span class="motto-star">✦</span>
+        </div>
+      </div>
+
+      <!-- Col 2: Internal Quick Navigation -->
+      <div class="footer-col">
+        <h4>Platform Modules</h4>
+        <ul class="footer-links">
+          <li><a href="javascript:void(0)" onclick="document.querySelector('nav.tabs button[data-tab=quiz]').click(); window.scrollTo({top:0,behavior:'smooth'});">Adaptive Quiz Engine</a></li>
+          <li><a href="javascript:void(0)" onclick="document.querySelector('nav.tabs button[data-tab=dashboard]').click(); window.scrollTo({top:0,behavior:'smooth'});">Performance Dashboard</a></li>
+          <li><a href="javascript:void(0)" onclick="document.querySelector('nav.tabs button[data-tab=plan]').click(); window.scrollTo({top:0,behavior:'smooth'});">Personalized Study Plan</a></li>
+          <li><a href="javascript:void(0)" onclick="document.querySelector('nav.tabs button[data-tab=history]').click(); window.scrollTo({top:0,behavior:'smooth'});">Progress &amp; Badges</a></li>
+          <li><a href="javascript:void(0)" onclick="document.querySelector('nav.tabs button[data-tab=resources]').click(); window.scrollTo({top:0,behavior:'smooth'});">Syllabus Resources</a></li>
+          <li><a href="javascript:void(0)" onclick="document.querySelector('nav.tabs button[data-tab=arena]').click(); window.scrollTo({top:0,behavior:'smooth'});">Multiplayer Battle Arena</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Adaptive Engine Features -->
+      <div class="footer-col">
+        <h4>Engine Highlights</h4>
+        <ul class="footer-features">
+          <li><span>⚡</span> Dynamic Mathematical Re-weighting</li>
+          <li><span>🛡️</span> Strict Anti-Cheating Socratic Guidance</li>
+          <li><span>📄</span> Multimodal Syllabus OCR (PDF/DOCX/IMG)</li>
+          <li><span>📐</span> LaTeX Formulas &amp; Mermaid Diagrams</li>
+          <li><span>🎤</span> Voice Mode &amp; Real-Time Speech Audio</li>
+          <li><span>⚔️</span> Live Multiplayer PvP Quiz Battles</li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Live Status & Landing Link -->
+      <div class="footer-col">
+        <h4>System &amp; Diagnostics</h4>
+        <div class="footer-status-box">
+          <div class="status-row">
+            <span class="live-dot"></span>
+            <span class="status-name">Adaptive Core Live</span>
+          </div>
+          <div class="status-meta">AI Engine: <b>Groq / gpt-oss-120b</b></div>
+          <div class="status-meta">Battle Arena: <b>Socket.IO Connected</b></div>
+          <div class="status-meta">Database: <b>MongoDB Active</b></div>
+        </div>
+        <div style="margin-top:14px;">
+          <a href="landing.html" class="btn secondary" style="display:block; text-align:center; padding:9px 12px; font-size:13px; text-decoration:none;">
+            ← Return to Landing Page
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom-bar">
+      <div>
+        &copy; 2026 <b>SmartPrep AI</b> &bull; Adaptive Exam Coach (AEC VAP Production). All rights reserved.
+      </div>
+      <div class="footer-bottom-links">
+        <a href="javascript:void(0)" onclick="toggleCoachDrawer()">Open AI Coach</a>
+        <span>&bull;</span>
+        <a href="#top" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;">Back to Top ↑</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ================= 9. FLOATING SOCRATIC AI COACH DRAWER ================= -->
+<div id="coachDrawer" class="coach-drawer" style="display:none;">
+  <div class="coach-drawer-header">
+    <div class="coach-drawer-title-wrap">
+      <div class="coach-avatar-badge">🎓</div>
+      <div>
+        <div class="coach-drawer-title">Socratic AI Coach</div>
+        <div class="coach-drawer-subtitle">Conceptual guidance · Ask concepts &amp; hints</div>
+      </div>
+    </div>
+    <div class="coach-drawer-actions">
+      <button id="coachMinimizeBtn" class="coach-action-btn" title="Minimize">−</button>
+      <button id="coachCloseBtn" class="coach-action-btn" title="Close">&times;</button>
+    </div>
+  </div>
+
+  <div class="coach-socratic-banner">
+    <span class="banner-icon">🛡️</span>
+    <div class="banner-text">
+      <b>Socratic Anti-Cheating Mode:</b> Ask about tricky concepts or upload diagram images. I guide you with hints without spoiling test answers!
+    </div>
+  </div>
+
+  <div class="coach-drawer-body">
+    <div class="chat-log" id="chatLog"></div>
+    <div id="chatImagePreview" style="display:none; margin: 0 0 10px 0; position:relative; width:fit-content;">
+      <img id="chatPreviewImg" src="" style="max-height:80px; border-radius:6px; border:1px solid var(--card-border);">
+      <button id="chatClearImgBtn" style="position:absolute; top:-6px; right:-6px; background:var(--red-soft); color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center;">&times;</button>
+    </div>
+  </div>
+
+  <div class="coach-drawer-footer">
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Ask concepts (e.g., 'explain Doppler effect')...">
+      <label class="btn secondary chat-tool-btn" style="cursor:pointer; margin:0;" title="Upload Question Diagram">
+        📷
+        <input type="file" id="chatImageInput" accept="image/*" style="display:none;">
+      </label>
+      <button class="btn secondary chat-tool-btn" id="chatVoiceBtn" title="Voice Assistant">🎤</button>
+      <button class="btn red chat-tool-btn" id="chatStopVoiceBtn" style="display:none;" title="Stop Voice">🛑</button>
+      <button class="btn chat-tool-btn" id="chatSendBtn">Send</button>
+    </div>
+  </div>
 </div>
 
-<footer class="foot">"We help you learn, not cheat." ✦</footer>
+<!-- ================= 10. SMALL FLOATING COACH ICON BUTTON ================= -->
+<button id="coachFloatingBtn" class="coach-floating-btn" title="Ask AI Coach">
+  <div class="coach-float-icon">🎓</div>
+  <div class="coach-float-content">
+    <span class="coach-float-title">Ask Coach</span>
+    <span class="coach-float-sub">AI Online</span>
+  </div>
+  <span class="coach-pulse-dot"></span>
+</button>
 
 <script src="script.js"></script>
 
