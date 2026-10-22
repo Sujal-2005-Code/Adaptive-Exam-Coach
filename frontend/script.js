@@ -198,6 +198,7 @@ function renderFocusMeter(){
 
 // Quiz Engine via AI
 async function startQuiz(config, isDemo){
+  setCoachLockState(true);
   document.getElementById('quizEmpty').style.display='none';
   document.getElementById('quizResult').style.display='none';
   const active = document.getElementById('quizActive');
@@ -487,6 +488,7 @@ function processAnswerResult(correct){
 }
 
 function resetQuizUI(){
+  setCoachLockState(false);
   if (quiz && quiz.timerInterval) clearInterval(quiz.timerInterval);
   quiz=null;
   document.getElementById('quizActive').style.display='none';
@@ -495,6 +497,7 @@ function resetQuizUI(){
 }
 
 function endQuiz(early, timeout = false){
+  setCoachLockState(false);
   if (quiz && quiz.timerInterval) clearInterval(quiz.timerInterval);
   const weightsAfter = currentWeights();
   beforeAfterSnapshot = { before: quiz.weightsBefore, after: weightsAfter, topicsAsked: quiz.topicsAsked };
@@ -745,8 +748,87 @@ document.getElementById('chatStopVoiceBtn').addEventListener('click', () => {
 document.getElementById('chatSendBtn').addEventListener('click', sendChat);
 document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
 
-// ================= FLOATING AI COACH CONTROLS =================
+// ================= FLOATING AI COACH CONTROLS & ANTI-CHEATING LOCK =================
+let isQuizActive = false;
+
+window.setCoachLockState = function(locked) {
+  isQuizActive = locked;
+  const floatBtn = document.getElementById('coachFloatingBtn');
+  const headerBtn = document.getElementById('coachHeaderBtn');
+  const drawer = document.getElementById('coachDrawer');
+  const helperBanner = document.querySelector('.quiz-coach-helper-banner');
+
+  if (locked) {
+    if (drawer) drawer.style.display = 'none';
+
+    if (floatBtn) {
+      floatBtn.classList.add('coach-locked');
+      floatBtn.title = "AI Coach is disabled during active quiz to prevent cheating.";
+      floatBtn.innerHTML = `
+        <div class="coach-float-icon">🔒</div>
+        <div class="coach-float-content">
+          <span class="coach-float-title">Coach Locked</span>
+          <span class="coach-float-sub" style="color:var(--red-soft);">Exam Mode</span>
+        </div>
+      `;
+    }
+
+    if (headerBtn) {
+      headerBtn.classList.add('coach-locked');
+      headerBtn.title = "AI Coach is disabled during active quiz.";
+      headerBtn.innerHTML = `🔒 <span class="btn-text">Locked</span>`;
+    }
+
+    if (helperBanner) {
+      helperBanner.innerHTML = `
+        <div class="helper-content">
+          <span class="helper-badge" style="color:var(--red-soft);">🔒 Anti-Cheating Lock Active</span>
+          <span class="helper-text">The AI Coach is disabled during active quizzes to ensure honest self-assessment. Complete your quiz to unlock coaching!</span>
+        </div>
+        <button type="button" class="btn secondary helper-ask-btn" disabled style="opacity:0.5; cursor:not-allowed;">
+          🔒 Coach Locked
+        </button>
+      `;
+    }
+  } else {
+    if (floatBtn) {
+      floatBtn.classList.remove('coach-locked');
+      floatBtn.title = "Ask AI Coach";
+      floatBtn.innerHTML = `
+        <div class="coach-float-icon">🎓</div>
+        <div class="coach-float-content">
+          <span class="coach-float-title">Ask Coach</span>
+          <span class="coach-float-sub">AI Online</span>
+        </div>
+        <span class="coach-pulse-dot"></span>
+      `;
+    }
+
+    if (headerBtn) {
+      headerBtn.classList.remove('coach-locked');
+      headerBtn.title = "Open AI Coach";
+      headerBtn.innerHTML = `🎓 <span class="btn-text">Coach</span>`;
+    }
+
+    if (helperBanner) {
+      helperBanner.innerHTML = `
+        <div class="helper-content">
+          <span class="helper-badge">💡 Socratic AI Guidance</span>
+          <span class="helper-text">Stuck on a tricky concept? The AI Coach provides conceptual guidance and diagrams without spoiling test answers.</span>
+        </div>
+        <button type="button" class="btn secondary helper-ask-btn" onclick="toggleCoachDrawer()">
+          🎓 Ask Socratic Coach
+        </button>
+      `;
+    }
+  }
+};
+
 window.toggleCoachDrawer = function() {
+  if (isQuizActive) {
+    alert("🛡️ Anti-Cheating Lock Active!\n\nThe AI Coach is disabled during an active quiz to uphold academic integrity. Complete or end the quiz to ask questions and review concepts.");
+    return;
+  }
   const drawer = document.getElementById('coachDrawer');
   if (!drawer) return;
   const isHidden = drawer.style.display === 'none' || !drawer.style.display;
@@ -777,7 +859,12 @@ if (coachMinimizeBtn) coachMinimizeBtn.addEventListener('click', () => {
   const drawer = document.getElementById('coachDrawer');
   if (drawer) drawer.style.display = 'none';
 });
+
 async function sendChat(){
+  if (isQuizActive) {
+    addChatMsg("🛡️ <b>Anti-Cheating Protection:</b> The AI Coach is disabled during an active quiz to prevent cheating. Please complete your test first!", "refuse");
+    return;
+  }
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   const inp = document.getElementById('chatInput');
   const val = inp.value.trim();
@@ -1177,6 +1264,7 @@ socket.on('game-generating', () => {
 });
 
 socket.on('game-start', (questions) => {
+    setCoachLockState(true);
     arenaQuestions = questions;
     currentArenaQ = 0;
     
@@ -1252,6 +1340,7 @@ window.submitArenaAnswer = function(selected, idx, correct) {
 };
 
 function resetArena() {
+    setCoachLockState(false);
     currentArenaRoom = null;
     arenaQuestions = [];
     document.getElementById('arenaSetup').style.display = 'block';

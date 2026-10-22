@@ -519,6 +519,28 @@ table.hist tr:last-child td{ border-bottom:none; }
   box-shadow: 0 12px 30px rgba(31, 42, 68, 0.35);
   background: #151D30;
 }
+.coach-floating-btn.coach-locked {
+  background: var(--paper-2) !important;
+  color: var(--ink-soft) !important;
+  border-color: var(--card-border) !important;
+  opacity: 0.65;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+.coach-floating-btn.coach-locked:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: var(--paper-2) !important;
+}
+.coach-header-toggle.coach-locked {
+  background: var(--paper-2) !important;
+  color: var(--ink-soft) !important;
+  border-color: var(--card-border) !important;
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  pointer-events: auto !important;
+}
 .coach-float-icon {
   font-size: 22px;
   display: flex;
