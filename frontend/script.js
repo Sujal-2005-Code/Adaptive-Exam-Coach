@@ -1,6 +1,7 @@
 // ================= ENVIRONMENT & API CONFIGURATION =================
 // When running locally, uses localhost:3000. When deployed on Vercel, uses your Render backend URL.
-const RENDER_BACKEND_URL = window.RENDER_BACKEND_URL || localStorage.getItem('aec_backend_url') || "https://adaptive-exam-coach.onrender.com";
+const RAW_RENDER_URL = window.RENDER_BACKEND_URL || localStorage.getItem('aec_backend_url') || "https://adaptive-exam-coach.onrender.com";
+const RENDER_BACKEND_URL = RAW_RENDER_URL.replace(/\/+$/, '');
 
 const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? "http://localhost:3000"
