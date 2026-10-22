@@ -126,9 +126,21 @@ body.sidebar-open .sidebar-backdrop {
   color: inherit;
 }
 .sidebar-stamp {
-  width: 36px;
-  height: 36px;
-  font-size: 17px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2.5px solid var(--red);
+  color: var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Kalam', cursive;
+  font-weight: 700;
+  font-size: 19px;
+  transform: rotate(-7deg);
+  flex-shrink: 0;
+  background: rgba(181, 56, 44, 0.04);
+  box-shadow: 0 2px 4px rgba(181, 56, 44, 0.12);
 }
 .sidebar-brand-title {
   font-family: 'Kalam', cursive;
@@ -540,7 +552,7 @@ body.sidebar-open .sidebar-backdrop {
   text-decoration:none;
   color:inherit;
 }
-.brand .stamp{
+.stamp, .brand .stamp{
   width:42px;
   height:42px;
   border-radius:50%;
