@@ -1,0 +1,1422 @@
+const API_BASE = "http://localhost:3000/api";
+let authToken = localStorage.getItem('aec_token');
+let currentUser = localStorage.getItem('aec_user');
+
+function getAuthHeaders() {
+    return {
+        'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+    };
+}
+
+let xp = 0;
+let streak = 0;
+let lastActive = null;
+let badges = [];
+let userGrade = 'General';
+let targetExam = 'None';
+let userEmail = '';
+let customSyllabusName = '';
+let customSyllabusData = {};
+let quizHistory = [];
+let quiz = null;
+let beforeAfterSnapshot = null;
+
+Object.defineProperty(window, 'TOPICS', {
+    get: function() {
+        if (typeof customSyllabusData !== 'undefined' && customSyllabusData && Object.keys(customSyllabusData).length > 0) {
+            return Object.keys(customSyllabusData);
+        }
+        return ["Math","Physics","Chemistry","Biology"];
+    }
+});
+const TOPIC_COLOR = { Math:"#B4801F", Physics:"#1F2A44", Chemistry:"#3F7A4E", Biology:"#B5382C" };
+
+let weaknessTracker = {};
+TOPICS.forEach(t => weaknessTracker[t] = {correct:0, total:0});
+
+const MICRO_TOPICS = {
+  Math: ["Algebra", "Calculus", "Geometry", "Trigonometry", "Probability"],
+  Physics: ["Kinematics", "Thermodynamics", "Electromagnetism", "Optics", "Modern Physics"],
+  Chemistry: ["Organic Chemistry", "Inorganic Chemistry", "Physical Chemistry", "Biochemistry", "Analytical Chemistry"],
+  Biology: ["Cell Biology", "Genetics", "Evolution", "Human Anatomy", "Ecology"]
+};
+let microTracker = {};
+function initMicroTracker() {
+  TOPICS.forEach(t => {
+    let subs = MICRO_TOPICS[t];
+    if (!subs && typeof customSyllabusData !== 'undefined' && customSyllabusData[t]) {
+      subs = customSyllabusData[t];
+    }
+    if (subs) {
+      subs.forEach(sub => {
+        if(!microTracker[sub]) microTracker[sub] = {correct:0, total:0};
+      });
+    }
+  });
+}
+initMicroTracker();
+
+
+
+function updateCustomSubjectDropdown() {
+    const select = document.getElementById('customSubjectSelect');
+    
+    // Ensure TOPIC_COLOR has entries for new topics
+    TOPICS.forEach((t, idx) => {
+        if (!TOPIC_COLOR[t]) {
+            const colors = ['#B4801F', '#1F2A44', '#3F7A4E', '#B5382C', '#6A2C70', '#D38C2B', '#2C6170'];
+            TOPIC_COLOR[t] = colors[idx % colors.length];
+        }
+    });
+    
+    // Initialize weaknessTracker for any new topics
+    TOPICS.forEach(t => {
+        if (!weaknessTracker[t]) weaknessTracker[t] = { correct: 0, total: 0 };
+    });
+    initMicroTracker();
+
+    if (!select) return;
+    
+    if (customSyllabusData && Object.keys(customSyllabusData).length > 0) {
+        select.innerHTML = '';
+        Object.keys(customSyllabusData).forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject;
+            option.textContent = subject;
+            select.appendChild(option);
+        });
+        
+        // Trigger change event to populate topic dropdown for the first subject
+        select.dispatchEvent(new Event('change'));
+    }
+}
+
+// Elementsification UI
+function updateXPUI() {
+    document.getElementById('xpCount').textContent = xp;
+    document.getElementById('streakCount').textContent = streak;
+}
+
+function addXP(amount) {
+    xp += amount;
+    updateXPUI();
+    checkBadges();
+}
+
+async function saveProgress() {
+    if (!authToken) return; // Don't save if not logged in
+    try {
+        await fetch(`${API_BASE}/data`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ weaknessTracker, quizHistory, microTracker, xp, streak, lastActive, badges })
+        });
+    } catch (err) {
+        console.error("Failed to save progress", err);
+    }
+}
+
+
+// Helpers
+function accuracy(topic){ const t = weaknessTracker[topic]; if(!t || t.total === 0) return null; return t.correct / t.total; }
+function overallAccuracy(){ let c=0,tot=0; TOPICS.forEach(t=>{ c+=weaknessTracker[t].correct; tot+=weaknessTracker[t].total; }); return tot===0 ? null : c/tot; }
+function totalAnswered(){ let tot=0; TOPICS.forEach(t=>tot+=weaknessTracker[t].total); return tot; }
+function weakness_tracker(topic, correct, total){
+  if(!weaknessTracker[topic]) weaknessTracker[topic] = {correct:0,total:0};
+  weaknessTracker[topic].correct += correct;
+  weaknessTracker[topic].total += total;
+  return getTop3Weakest();
+}
+function getTop3Weakest(){
+  return TOPICS.map(t => ({topic:t, acc: weaknessTracker[t].total>0 ? weaknessTracker[t].correct/weaknessTracker[t].total : 0.5, total: weaknessTracker[t].total}))
+    .sort((a,b)=> a.acc - b.acc).slice(0,3);
+}
+function currentWeights(){
+  const w = {};
+  TOPICS.forEach(t=>{
+    const acc = accuracy(t);
+    const effAcc = acc === null ? 0.6 : acc;
+    w[t] = Math.max(0.12, 1 - effAcc) + 0.15;
+  });
+  return w;
+}
+function fmt(n){ return (n*100).toFixed(0)+"%"; }
+function todayStr(){ const d = new Date(); return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + " " + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+
+// Tabs & UI
+document.getElementById('tabs').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  if(btn.dataset.tab==='dashboard') renderDashboard();
+  if(btn.dataset.tab==='plan') renderPlan();
+  if(btn.dataset.tab==='history') renderHistory();
+  if(btn.dataset.tab==='resources') renderResources();
+});
+
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  document.documentElement.classList.toggle('dark');
+  const dark = document.documentElement.classList.contains('dark');
+  document.getElementById('themeToggle').textContent = dark ? '☀️ Light' : '🌙 Dark';
+  document.getElementById('themeToggle').classList.toggle('active', dark);
+});
+document.getElementById('focusToggle').addEventListener('click', ()=>{
+  document.body.classList.toggle('focus-mode');
+  const on = document.body.classList.contains('focus-mode');
+  document.getElementById('focusToggle').classList.toggle('active', on);
+  document.querySelectorAll('nav.tabs, header .brand p').forEach(el=> el.style.opacity = on? '0.35':'1');
+});
+
+function renderFocusMeter(){
+  const w = currentWeights();
+  const maxW = Math.max(...Object.values(w));
+  const weakest = getTop3Weakest()[0]?.topic;
+  const el = document.getElementById('focusMeter');
+  el.innerHTML = TOPICS.map(t=>{
+    const pct = Math.round((w[t]/maxW)*100);
+    const isWeak = t===weakest && weaknessTracker[t].total>0;
+    return `<div class="focus-meter-row">
+      <span class="fm-label" style="color:${TOPIC_COLOR[t]}">${t.slice(0,4)}</span>
+      <div class="fm-track"><div class="fm-fill ${isWeak?'weakest':''}" style="width:${pct}%"></div></div>
+      <span class="fm-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+// Quiz Engine via AI
+async function startQuiz(config, isDemo){
+  document.getElementById('quizEmpty').style.display='none';
+  document.getElementById('quizResult').style.display='none';
+  const active = document.getElementById('quizActive');
+  active.style.display='block';
+  
+  quiz = {
+    n: config.n || 5, index: 0, correctCount: 0,
+    topicsAsked: [], answers: [], isDemo: !!isDemo,
+    weightsBefore: currentWeights(),
+    questions: [],
+    currentDifficulty: 'medium',
+    mode: config.mode || 'adaptive',
+    subject: config.subject || 'All',
+    subtopic: config.subtopic || 'All',
+    format: config.format || 'mix',
+    timerSeconds: config.timerSeconds || 0
+  };
+  
+  active.innerHTML = `
+    <div class="q-header">
+      <span class="q-progress" id="qProgress"></span>
+      <span class="badge" id="qTopicBadge"></span>
+      <span class="badge" id="qSubtopicBadge" style="background:var(--paper-2); border:1px solid var(--card-border); display:none;"></span>
+      <span class="badge" id="qDiffBadge"></span>
+      <span class="badge" id="qTimerText" style="margin-left:auto; font-family:'IBM Plex Mono',monospace; background:var(--gold); display:none;"></span>
+    </div>
+    <div class="q-text" id="qText"></div>
+    <div class="options" id="qOptions"></div>
+    <div id="qHintBox" style="display:none; margin: 10px 0; padding: 12px; background: var(--paper-2); border-left: 3px solid var(--gold); font-size: 14px; border-radius: 4px;"></div>
+    <div class="explain-box" id="qExplain"></div>
+    <div class="quiz-actions">
+      <button class="btn secondary" id="qHintBtn">💡 Get Hint</button>
+      <button class="btn secondary" id="quitQuizBtn">End Quiz</button>
+      <button class="btn" id="nextQBtn" disabled>Next Question →</button>
+    </div>`;
+    
+  if (quiz.timerSeconds > 0) {
+    const timerSpan = document.getElementById('qTimerText');
+    timerSpan.style.display = 'inline-block';
+    quiz.timeLeft = quiz.timerSeconds;
+    
+    quiz.timerInterval = setInterval(() => {
+      quiz.timeLeft--;
+      const min = Math.floor(quiz.timeLeft / 60);
+      const sec = quiz.timeLeft % 60;
+      timerSpan.textContent = `⏳ ${min}:${sec.toString().padStart(2, '0')}`;
+      
+      if (quiz.timeLeft <= 0) {
+        clearInterval(quiz.timerInterval);
+        quiz.timerInterval = null;
+        endQuiz(true, true); // (early, timeout)
+      }
+    }, 1000);
+  }
+    
+  document.getElementById('nextQBtn').onclick = ()=>{
+    quiz.index++;
+    if(quiz.index >= quiz.n){ endQuiz(); } else { fetchNextQuestion(); }
+  };
+  document.getElementById('quitQuizBtn').onclick = ()=>{
+    if(quiz && quiz.index>0) endQuiz(true);
+    else resetQuizUI();
+  };
+
+  await fetchNextQuestion();
+}
+
+async function fetchNextQuestion() {
+  document.getElementById('nextQBtn').disabled = true;
+  const qText = document.getElementById('qText');
+  qText.innerHTML = `<span style="color:var(--ink-soft)">⏳ Generating next question...</span>`;
+  document.getElementById('qOptions').innerHTML = '';
+  document.getElementById('qExplain').classList.remove('show');
+
+  let targetTopic, weakestSub;
+  
+  if (quiz.mode === 'custom' && (quiz.subject !== 'All' || quiz.subtopic !== 'All')) {
+    if (quiz.subject === 'All') {
+      targetTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
+      const subs = MICRO_TOPICS[targetTopic];
+      weakestSub = subs ? subs[Math.floor(Math.random() * subs.length)] : targetTopic;
+    } else {
+      targetTopic = quiz.subject;
+      if (quiz.subtopic === 'All') {
+        const subs = MICRO_TOPICS[targetTopic];
+        weakestSub = subs ? subs[Math.floor(Math.random() * subs.length)] : targetTopic;
+      } else {
+        weakestSub = quiz.subtopic;
+      }
+    }
+  } else {
+    // Adaptive logic
+    const weak = getTop3Weakest();
+    targetTopic = weak[0].topic; 
+    
+    weakestSub = MICRO_TOPICS[targetTopic][0];
+    let lowestAcc = 1.1;
+    MICRO_TOPICS[targetTopic].forEach(sub => {
+      const t = microTracker[sub];
+      const acc = (t && t.total > 0) ? t.correct / t.total : 0.5;
+      if (acc < lowestAcc) {
+         lowestAcc = acc;
+         weakestSub = sub;
+      }
+    });
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/quiz/single`, {
+      method: "POST", headers: getAuthHeaders(),
+      body: JSON.stringify({ topic: targetTopic, subtopic: weakestSub, difficulty: quiz.currentDifficulty, format: quiz.format })
+    });
+    const q = await res.json();
+    
+    if (q.error) throw new Error(q.error);
+    
+    quiz.questions[quiz.index] = q;
+    renderQuestion();
+  } catch (err) {
+    console.error(err);
+    qText.innerHTML = `<span style="color:var(--red-soft)">❌ Failed to generate question. Please try again.</span>`;
+    document.getElementById('nextQBtn').disabled = false;
+    document.getElementById('nextQBtn').textContent = 'Retry';
+    document.getElementById('nextQBtn').onclick = fetchNextQuestion;
+  }
+}
+
+function renderQuestion(){
+  const q = quiz.questions[quiz.index];
+  quiz.topicsAsked.push(q.topic);
+  document.getElementById('qProgress').textContent = `Question ${quiz.index+1} / ${quiz.n}`;
+  const badge = document.getElementById('qTopicBadge');
+  badge.textContent = q.topic || "General";
+  badge.style.color = TOPIC_COLOR[q.topic] || "#000";
+  
+  const subBadge = document.getElementById('qSubtopicBadge');
+  if(q.subtopic) {
+    subBadge.style.display = 'inline-block';
+    subBadge.textContent = q.subtopic;
+  } else {
+    subBadge.style.display = 'none';
+  }
+
+  const db = document.getElementById('qDiffBadge');
+  db.className = 'badge diff-'+ (q.d || 'medium');
+  db.textContent = q.d || "medium";
+  document.getElementById('qText').innerHTML = window.marked ? marked.parse(q.q || '') : (q.q || '');
+  if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+      window.MathJax.typesetPromise([document.getElementById('quizActive')]).catch(err => console.log(err));
+  }
+  const optWrap = document.getElementById('qOptions');
+  
+  if (q.type === 'short') {
+    optWrap.innerHTML = `
+      <input type="text" id="shortAnswerInput" class="input" placeholder="Type your answer here..." style="width:100%; margin-bottom:10px;">
+      <button class="btn" id="submitShortAnswerBtn">Submit Answer</button>
+    `;
+    document.getElementById('submitShortAnswerBtn').addEventListener('click', async () => {
+      const val = document.getElementById('shortAnswerInput').value.trim();
+      if (!val) return;
+      document.getElementById('submitShortAnswerBtn').disabled = true;
+      document.getElementById('submitShortAnswerBtn').textContent = "Evaluating...";
+      
+      try {
+        const res = await fetch(`${API_BASE}/quiz/evaluate`, {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ question: q.q, answer: val, idealAnswer: q.a })
+        });
+        const evalData = await res.json();
+        q.e = evalData.explanation; // override explanation with custom feedback
+        processAnswerResult(evalData.correct);
+      } catch (e) {
+        console.error(e);
+        document.getElementById('submitShortAnswerBtn').disabled = false;
+        document.getElementById('submitShortAnswerBtn').textContent = "Retry Submit";
+      }
+    });
+  } else if (q.type === 'sata') {
+    optWrap.innerHTML = q.o.map((opt,i)=>
+      `<label class="opt sata-opt" style="display:flex; align-items:center; gap:10px;">
+         <input type="checkbox" value="${opt}">
+         <span>${opt}</span>
+       </label>`
+    ).join('') + `<button class="btn" id="submitSataBtn" style="margin-top:10px;">Submit Answer</button>`;
+    
+    document.getElementById('submitSataBtn').addEventListener('click', () => {
+      const selected = Array.from(optWrap.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+      const correctOptions = q.a || [];
+      const isCorrect = selected.length === correctOptions.length && selected.every(val => correctOptions.includes(val));
+      
+      optWrap.querySelectorAll('.sata-opt').forEach(lbl => {
+        const cb = lbl.querySelector('input');
+        cb.disabled = true;
+        if (correctOptions.includes(cb.value)) {
+            lbl.classList.add('correct');
+        } else if (cb.checked && !correctOptions.includes(cb.value)) {
+            lbl.classList.add('incorrect');
+        }
+      });
+      document.getElementById('submitSataBtn').style.display = 'none';
+      processAnswerResult(isCorrect);
+    });
+  } else {
+    // MCQ / TF
+    optWrap.innerHTML = q.o.map((opt,i)=>
+      `<button class="opt" data-i="${i}"><span class="letter">${String.fromCharCode(65+i)}</span>${opt}</button>`
+    ).join('');
+    optWrap.querySelectorAll('.opt').forEach(btn=>{
+      btn.addEventListener('click', ()=> {
+        const choice = q.o[btn.dataset.i];
+        const isCorrect = String(choice).toLowerCase().trim() === String(q.a).toLowerCase().trim();
+        optWrap.querySelectorAll('.opt').forEach(b => {
+          b.classList.add('disabled');
+          const bChoice = q.o[b.dataset.i];
+          if (String(bChoice).toLowerCase().trim() === String(q.a).toLowerCase().trim()) b.classList.add('correct');
+          if (bChoice === choice && !isCorrect) b.classList.add('incorrect');
+        });
+
+        if (isCorrect) {
+            addXP(10);
+        }
+        processAnswerResult(isCorrect);
+      });
+    });
+  }
+
+  document.getElementById('qExplain').classList.remove('show');
+  document.getElementById('qExplain').innerHTML='';
+  
+  const hintBtn = document.getElementById('qHintBtn');
+  hintBtn.style.display = 'inline-block';
+  hintBtn.disabled = false;
+  
+  if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+      window.MathJax.typesetPromise([document.getElementById('quizActive')]).catch(err => console.log(err));
+  }
+  hintBtn.onclick = () => {
+    document.getElementById('qHintBox').style.display = 'block';
+    document.getElementById('qHintBox').innerHTML = `<b>Hint:</b> ${q.h || 'No hint available.'}`;
+    hintBtn.disabled = true;
+  };
+  document.getElementById('qHintBox').style.display = 'none';
+  document.getElementById('qHintBox').innerHTML = '';
+
+  document.getElementById('nextQBtn').disabled = true;
+  document.getElementById('nextQBtn').textContent = quiz.index+1 >= quiz.n ? 'Finish Quiz →' : 'Next Question →';
+  document.getElementById('nextQBtn').onclick = ()=>{
+    quiz.index++;
+    if(quiz.index >= quiz.n){ endQuiz(); } else { fetchNextQuestion(); }
+  };
+  renderFocusMeter();
+}
+
+function processAnswerResult(correct){
+  const q = quiz.questions[quiz.index];
+  
+  if (q.topic && weaknessTracker[q.topic]) {
+      weakness_tracker(q.topic, correct?1:0, 1);
+  }
+  if (q.subtopic && microTracker[q.subtopic]) {
+      microTracker[q.subtopic].correct += correct?1:0;
+      microTracker[q.subtopic].total += 1;
+  }
+  
+  quiz.answers.push({topic:q.topic, correct, diff:q.d});
+  if(correct) {
+     quiz.correctCount++;
+     if(quiz.currentDifficulty === 'easy') quiz.currentDifficulty = 'medium';
+     else if(quiz.currentDifficulty === 'medium') quiz.currentDifficulty = 'hard';
+  } else {
+     if(quiz.currentDifficulty === 'hard') quiz.currentDifficulty = 'medium';
+     else if(quiz.currentDifficulty === 'medium') quiz.currentDifficulty = 'easy';
+  }
+
+  const exp = document.getElementById('qExplain');
+  exp.classList.add('show');
+  exp.innerHTML = `<b>${correct? '✅ Correct!' : '❌ Not quite.'}</b> ${window.marked ? marked.parse(q.e || '') : (q.e || '')}`;
+  
+  if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+      window.MathJax.typesetPromise([exp]).catch(err => console.log(err));
+  }
+
+  document.getElementById('qHintBtn').disabled = true;
+  document.getElementById('nextQBtn').disabled = false;
+  updateStats();
+  renderFocusMeter();
+}
+
+function resetQuizUI(){
+  if (quiz && quiz.timerInterval) clearInterval(quiz.timerInterval);
+  quiz=null;
+  document.getElementById('quizActive').style.display='none';
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizEmpty').style.display='block';
+}
+
+function endQuiz(early, timeout = false){
+  if (quiz && quiz.timerInterval) clearInterval(quiz.timerInterval);
+  const weightsAfter = currentWeights();
+  beforeAfterSnapshot = { before: quiz.weightsBefore, after: weightsAfter, topicsAsked: quiz.topicsAsked };
+  quizHistory.push({
+    date: todayStr(),
+    score: quiz.correctCount,
+    total: quiz.answers.length,
+    topics: [...new Set(quiz.topicsAsked)],
+    accuracyAtEnd: overallAccuracy(),
+    demo: quiz.isDemo
+  });
+  saveProgress();
+  document.getElementById('quizActive').style.display='none';
+  const res = document.getElementById('quizResult');
+  res.style.display='block';
+  const pct = quiz.answers.length? Math.round(quiz.correctCount/quiz.answers.length*100) : 0;
+  const weak = getTop3Weakest();
+  res.innerHTML = `
+    <div style="text-align:center; padding:10px 0 4px;">
+      <div style="font-family:'Kalam',cursive; font-size:26px;">${timeout ? "⏳ Time's Up!" : (early ? 'Quiz Ended Early' : 'Quiz Complete!')}</div>
+      <div style="font-size:44px; font-weight:700; font-family:'IBM Plex Mono',monospace; color:${pct>=70?'var(--green)':pct>=40?'var(--gold)':'var(--red-soft)'}; margin:8px 0;">${quiz.correctCount}/${quiz.answers.length}</div>
+      <div style="color:var(--ink-soft); font-size:13.5px; margin-bottom:18px;">${pct}% correct — the coach has already re-weighted your next quiz.</div>
+    </div>
+    <div class="before-after">
+      <div><div class="ba-label">Before this quiz</div>${renderMiniBars(beforeAfterSnapshot.before)}</div>
+      <div class="arrow">➜</div>
+      <div><div class="ba-label">After this quiz</div>${renderMiniBars(beforeAfterSnapshot.after)}</div>
+    </div>
+    <div style="margin-top:18px; padding:12px 14px; background:var(--paper-2); border-radius:8px; font-size:13px;">
+      <b>Coach's read:</b> your next quiz will lean toward <b style="color:var(--red-soft)">${weak[0].topic}</b>${weak[1]?`, then ${weak[1].topic}`:''} — that's where practice will help most.
+    </div>
+    <div class="quiz-actions" style="justify-content:center; margin-top:18px;">
+      <button class="btn secondary" id="viewDashBtn">View Dashboard →</button>
+      <button class="btn" id="quizAgainBtn">Start Another Quiz</button>
+    </div>
+  `;
+  document.getElementById('quizAgainBtn').addEventListener('click', ()=> startQuiz(getQuizConfig(),false));
+  document.getElementById('viewDashBtn').addEventListener('click', ()=> document.querySelector('nav.tabs button[data-tab=dashboard]').click());
+  updateStats();
+  renderFocusMeter();
+}
+
+function renderMiniBars(weights){
+  const maxW = Math.max(...Object.values(weights));
+  return `<div style="display:flex; gap:8px; align-items:flex-end; height:90px; justify-content:center;">
+    ${TOPICS.map(t=>{
+      const h = Math.max(8, Math.round((weights[t]/maxW)*80));
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="width:26px;height:${h}px;background:${TOPIC_COLOR[t]};border-radius:4px 4px 0 0;"></div>
+        <span style="font-size:10px;font-weight:700;color:var(--ink-soft);">${t.slice(0,4)}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// --- Quiz UI Setup Logic ---
+document.getElementById('quizModeSelect').addEventListener('change', (e) => {
+  const isCustom = e.target.value === 'custom';
+  document.getElementById('customQuizSettings').style.display = isCustom ? 'block' : 'none';
+});
+
+document.getElementById('customSubjectSelect').addEventListener('change', (e) => {
+  const subj = e.target.value;
+  const topicSelect = document.getElementById('customTopicSelect');
+  if (subj === 'All') {
+    topicSelect.innerHTML = '<option value="All">All Topics</option>';
+    topicSelect.disabled = true;
+  } else {
+    topicSelect.disabled = false;
+    let subtopics = MICRO_TOPICS[subj];
+    if (!subtopics && customSyllabusData && customSyllabusData[subj]) {
+        subtopics = customSyllabusData[subj];
+    }
+    subtopics = subtopics || [];
+    
+    topicSelect.innerHTML = '<option value="All">All Topics</option>' + 
+      subtopics.map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+});
+
+function getQuizConfig() {
+  return {
+    n: parseInt(document.getElementById('quizCountInput').value) || 5,
+    mode: document.getElementById('quizModeSelect').value,
+    format: document.getElementById('customFormatSelect') ? document.getElementById('customFormatSelect').value : 'mix',
+    subject: document.getElementById('customSubjectSelect').value,
+    subtopic: document.getElementById('customTopicSelect').value,
+    timerSeconds: parseInt(document.getElementById('quizTimerSelect') ? document.getElementById('quizTimerSelect').value : 0)
+  };
+}
+
+document.getElementById('startQuizBtn').addEventListener('click', ()=> startQuiz(getQuizConfig(), false));
+document.getElementById('startDemoBtn').addEventListener('click', ()=> startQuiz(getQuizConfig(), true));
+
+// AI Chat
+let chatMessages = [];
+if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: false, theme: 'base' });
+}
+
+async function addChatMsg(text, cls){
+  const log = document.getElementById('chatLog');
+  const div = document.createElement('div');
+  div.className = 'chat-msg '+cls;
+  if (cls === 'coach' && window.marked) {
+      const wikiMatch = text.match(/\[WIKI_IMAGE:\s*(.*?)\]/);
+      if (wikiMatch) {
+          const query = wikiMatch[1];
+          try {
+              const res = await fetch(`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=1&prop=pageimages&format=json&pithumbsize=500&origin=*`);
+              const data = await res.json();
+              const pages = data.query.pages;
+              const pageId = Object.keys(pages)[0];
+              if (pageId !== "-1" && pages[pageId].thumbnail) {
+                  const imgUrl = pages[pageId].thumbnail.source;
+                  text = text.replace(wikiMatch[0], `![${query}](${imgUrl})`);
+              } else {
+                  text = text.replace(wikiMatch[0], `*[No scientific image found for "${query}" on Wikipedia]*`);
+              }
+          } catch (e) {
+              console.error("Wiki fetch error", e);
+              text = text.replace(wikiMatch[0], `*[Error fetching image]*`);
+          }
+      }
+      div.innerHTML = marked.parse(text);
+      if (window.mermaid) {
+          const mermaidBlocks = div.querySelectorAll('code.language-mermaid');
+          for (let i = 0; i < mermaidBlocks.length; i++) {
+              const block = mermaidBlocks[i];
+              const id = 'mermaid-' + Date.now() + '-' + i;
+              
+              // Bulletproof cleaner for the stubborn |> hallucination
+              let cleanCode = block.textContent.replace(/\|>/g, '|').trim();
+              if (!/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram(-v2)?|erDiagram|journey|gantt|pie|requirementDiagram|gitGraph|C4Context|mindmap|timeline|xychart)/i.test(cleanCode)) {
+                  cleanCode = 'graph TD\n' + cleanCode;
+              }
+              
+              try {
+                  const { svg } = await mermaid.render(id, cleanCode);
+                  const graphDiv = document.createElement('div');
+                  graphDiv.innerHTML = svg;
+                  block.parentElement.replaceWith(graphDiv);
+              } catch(e) { 
+                  console.error('Mermaid render error', e); 
+                  const errDiv = document.createElement('div');
+                  errDiv.style.color = 'var(--red-soft)';
+                  errDiv.style.fontSize = '12px';
+                  errDiv.textContent = '[Diagram generation failed]';
+                  block.parentElement.replaceWith(errDiv);
+              }
+          }
+      }
+  } else {
+      div.innerHTML = text; // allow HTML for image tags in user bubble
+  }
+  log.appendChild(div);
+  if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+      window.MathJax.typesetPromise([div]).catch(err => console.log(err));
+  }
+  log.scrollTop = log.scrollHeight;
+
+  if (cls === 'coach' && isVoiceMode) {
+      isVoiceMode = false;
+      if (window.speechSynthesis) {
+          let cleanText = text.replace(/```[\s\S]*?```/g, ' [Diagram] '); 
+          cleanText = cleanText.replace(/\[WIKI_IMAGE:.*?\]/g, ' [Image] ');
+          cleanText = cleanText.replace(/[*_#`]/g, '');
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          
+          utterance.onstart = () => {
+              document.getElementById('chatVoiceBtn').style.display = 'none';
+              document.getElementById('chatStopVoiceBtn').style.display = 'inline-block';
+          };
+          const resetBtns = () => {
+              document.getElementById('chatStopVoiceBtn').style.display = 'none';
+              document.getElementById('chatVoiceBtn').style.display = 'inline-block';
+          };
+          utterance.onend = resetBtns;
+          utterance.onerror = resetBtns;
+          
+          window.speechSynthesis.speak(utterance);
+      }
+  }
+}
+
+let currentChatImage = null;
+let isVoiceMode = false;
+
+document.getElementById('chatImageInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    currentChatImage = ev.target.result;
+    document.getElementById('chatPreviewImg').src = currentChatImage;
+    document.getElementById('chatImagePreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('chatClearImgBtn').addEventListener('click', () => {
+  currentChatImage = null;
+  document.getElementById('chatImagePreview').style.display = 'none';
+  document.getElementById('chatImageInput').value = '';
+});
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+if(SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  
+  recognition.onresult = event => {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById('chatInput').value = transcript;
+    isVoiceMode = true; 
+    sendChat();
+  };
+  recognition.onend = () => {
+    document.getElementById('chatVoiceBtn').classList.remove('listening');
+  };
+  recognition.onerror = event => {
+    document.getElementById('chatVoiceBtn').classList.remove('listening');
+    let msg = "Speech recognition error: " + event.error;
+    if (event.error === 'not-allowed') msg = "Microphone access blocked! Please click the camera/mic icon in your browser's address bar to allow microphone permissions for this site.";
+    if (event.error === 'no-speech') msg = "No speech detected. Please check your microphone connection and try again.";
+    console.error(msg);
+    alert(msg);
+  };
+}
+
+document.getElementById('chatVoiceBtn').addEventListener('click', () => {
+  if(!recognition) {
+    alert("Speech recognition is not supported in this browser.");
+    return;
+  }
+  document.getElementById('chatVoiceBtn').classList.add('listening');
+  recognition.start();
+});
+
+document.getElementById('chatStopVoiceBtn').addEventListener('click', () => {
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+});
+
+document.getElementById('chatSendBtn').addEventListener('click', sendChat);
+document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+async function sendChat(){
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  const inp = document.getElementById('chatInput');
+  const val = inp.value.trim();
+  if(!val && !currentChatImage) return;
+  
+  if (currentChatImage) {
+      addChatMsg((val ? val + '<br>' : '') + `<img src="${currentChatImage}" style="max-height:100px; border-radius:6px; margin-top:6px;">`, 'user');
+  } else {
+      addChatMsg(val, 'user');
+  }
+
+  const payloadImage = currentChatImage;
+  inp.value='';
+  currentChatImage = null;
+  document.getElementById('chatImagePreview').style.display = 'none';
+  document.getElementById('chatImageInput').value = '';
+  
+  chatMessages.push({ role: 'user', content: val });
+  if (chatMessages.length > 10) chatMessages.shift(); // Keep last 10 messages
+
+  const quizActive = !!quiz && quiz.index < quiz.n && document.getElementById('quizActive').style.display!=='none';
+  let currentQuestionContext = null;
+  if (quizActive && quiz.questions && quiz.questions[quiz.index]) {
+      currentQuestionContext = quiz.questions[quiz.index];
+  }
+  
+  try {
+      const res = await fetch(`${API_BASE}/chat`, {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ 
+              chatMessages, 
+              image: payloadImage,
+              weaknessTracker, 
+              microTracker,
+              quizHistory,
+              isQuizActive: quizActive,
+              currentQuestion: currentQuestionContext
+          })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.reply) {
+          throw new Error(data.error || "Server error");
+      }
+      chatMessages.push({ role: 'assistant', content: data.reply });
+      addChatMsg(data.reply, 'coach');
+  } catch(e) {
+      addChatMsg("Sorry, the coaching AI is offline right now.", "refuse");
+  }
+}
+addChatMsg("Hi! Ask me about any concept, or just start a quiz — I'll adapt as we go.", 'coach');
+
+// Dashboard
+function renderDashboard(){
+  const bc = document.getElementById('dashBarChart');
+  const accs = TOPICS.map(t=> ({t, acc: accuracy(t)}));
+  const weakestTopic = getTop3Weakest()[0]?.topic;
+  bc.innerHTML = accs.map(({t,acc})=>{
+    const pct = acc===null? 0 : Math.round(acc*100);
+    const cls = acc===null? '' : (acc>=0.7?'strong': acc<0.5?'weak':'');
+    return `<div class="bar-col">
+      <span class="bar-val">${acc===null?'—':pct+'%'}</span>
+      <div class="bar" style="height:${acc===null?4:Math.max(6,pct*1.5)}px; background:${cls==='strong'?'var(--green)':cls==='weak'?'var(--red-soft)':'var(--ink-soft)'}"></div>
+      <span class="bar-name" style="color:${TOPIC_COLOR[t]}">${t}${t===weakestTopic && weaknessTracker[t].total>0 ? ' ⚑':''}</span>
+    </div>`;
+  }).join('');
+
+  const oa = overallAccuracy();
+  const svg = document.getElementById('donutChart');
+  const r=55,cx=70,cy=70,circ=2*Math.PI*r;
+  if(oa===null){
+    svg.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--card-border)" stroke-width="16"/>
+      <text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="13" fill="var(--ink-soft)" font-family="IBM Plex Mono">no data</text>`;
+  } else {
+    const correctLen = circ*oa;
+    svg.innerHTML = `
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--paper-2)" stroke-width="16"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--green)" stroke-width="16"
+        stroke-dasharray="${correctLen} ${circ-correctLen}" stroke-linecap="round"
+        transform="rotate(-90 ${cx} ${cy})"/>
+      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--ink)" font-family="IBM Plex Mono">${Math.round(oa*100)}%</text>
+      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="10" fill="var(--ink-soft)" font-family="IBM Plex Sans">accuracy</text>
+    `;
+  }
+  document.getElementById('donutLegend').innerHTML = `
+    <div><span class="dot" style="background:var(--green)"></span>Correct: <b>${TOPICS.reduce((s,t)=>s+weaknessTracker[t].correct,0)}</b></div>
+    <div><span class="dot" style="background:var(--paper-2); border:1px solid var(--card-border)"></span>Incorrect: <b>${TOPICS.reduce((s,t)=>s+(weaknessTracker[t].total-weaknessTracker[t].correct),0)}</b></div>
+    <div><span class="dot" style="background:var(--ink-soft)"></span>Total answered: <b>${totalAnswered()}</b></div>
+  `;
+
+  const baWrap = document.getElementById('beforeAfterChart');
+  if(!beforeAfterSnapshot){
+    baWrap.innerHTML = `<div class="empty"><div class="big">📈</div>Complete a quiz to see the focus shift visualised here.</div>`;
+  } else {
+    baWrap.innerHTML = `<div class="before-after">
+      <div><div class="ba-label">Before</div>${renderMiniBars(beforeAfterSnapshot.before)}</div>
+      <div class="arrow">➜</div>
+      <div><div class="ba-label">After</div>${renderMiniBars(beforeAfterSnapshot.after)}</div>
+    </div>`;
+  }
+
+  const weak = getTop3Weakest();
+  document.getElementById('weakList').innerHTML = weak.map((w,i)=>`
+    <li><span><span class="rank">#${i+1}</span>${w.topic}</span>
+    <span>${w.total>0? fmt(w.acc)+' accuracy · '+w.total+' answered' : 'no data yet'}</span></li>`).join('');
+
+  updateStats();
+}
+
+function updateStats(){
+  document.getElementById('statQuizzes').textContent = quizHistory.length;
+  const oa = overallAccuracy();
+  document.getElementById('statAccuracy').textContent = oa===null ? '—' : fmt(oa);
+  document.getElementById('statAnswered').textContent = totalAnswered();
+  const weak = getTop3Weakest();
+  document.getElementById('statWeakest').textContent = weak[0] && weak[0].total>0 ? weak[0].topic : '—';
+}
+
+// AI Study Plan
+async function renderPlan(){
+  const card = document.getElementById('planCard');
+  if(totalAnswered()===0){
+    card.innerHTML = `<div class="empty"><div class="big">📋</div>Take a quiz first — your AI coach needs data to build a plan.</div>`;
+    return;
+  }
+  
+  card.innerHTML = `<div class="empty"><div class="big">🧠</div>Generating your personalised AI study plan...</div>`;
+  
+  try {
+      const res = await fetch(`${API_BASE}/analyze`, {
+          method: "POST", headers: getAuthHeaders(),
+          body: JSON.stringify({ weaknessTracker, quizHistory: quizHistory.slice(-5) })
+      });
+      const analysisHtml = await res.text();
+      card.innerHTML = `<div style="padding:10px 0;">${analysisHtml}</div>`;
+  } catch (err) {
+      card.innerHTML = `<div class="empty"><div class="big">❌</div>Failed to connect to AI Coach.</div>`;
+  }
+}
+
+
+
+// History
+function renderHistory(){
+  const wrap = document.getElementById('historyTableWrap');
+  const statsWrap = document.getElementById('historyStats');
+  const totalQ = totalAnswered();
+  const streak = quizHistory.length;
+  statsWrap.innerHTML = `
+    <div class="stat-box"><div class="n">${quizHistory.length}</div><div class="l">Quizzes</div></div>
+    <div class="stat-box"><div class="n">${totalQ}</div><div class="l">Questions Answered</div></div>
+    <div class="stat-box"><div class="n">${overallAccuracy()===null?'—':fmt(overallAccuracy())}</div><div class="l">Accuracy</div></div>
+    <div class="stat-box"><div class="n">${streak}🔥</div><div class="l">Session Streak</div></div>
+  `;
+  if(quizHistory.length===0){
+    wrap.innerHTML = `<div class="empty"><div class="big">🕐</div>No quizzes yet — your history will build up here.</div>`;
+    return;
+  }
+  wrap.innerHTML = `<table class="hist"><thead><tr><th>When</th><th>Score</th><th>Topics Covered</th><th>Accuracy So Far</th><th>Type</th></tr></thead><tbody>
+    ${quizHistory.slice().reverse().map(h=>`<tr>
+      <td>${h.date}</td>
+      <td><b>${h.score}/${h.total}</b></td>
+      <td>${h.topics.join(', ')}</td>
+      <td>${h.accuracyAtEnd===null?'—':fmt(h.accuracyAtEnd)}</td>
+      <td>${h.demo? '<span class="badge weak">Demo</span>' : '<span class="badge">Standard</span>'}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+document.getElementById('exportJsonBtn').addEventListener('click', ()=>{
+  const data = { weaknessTracker, quizHistory, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'weakness_tracker.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('importJsonBtn').addEventListener('click', ()=> document.getElementById('importFileInput').click());
+document.getElementById('importFileInput').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(data.weaknessTracker) weaknessTracker = data.weaknessTracker;
+      if(data.quizHistory) quizHistory = data.quizHistory;
+      renderDashboard(); renderHistory(); renderFocusMeter();
+      addChatMsg("Tracker imported — picking up right where you left off.", 'coach');
+    }catch(err){ alert('Could not read that file — make sure it is a tracker.json export.'); }
+  };
+  reader.readAsText(file);
+});
+document.getElementById('resetBtn').addEventListener('click', async ()=>{
+  if(!confirm('Reset all progress? This clears the weakness tracker and quiz history for this session.')) return;
+  TOPICS.forEach(t => weaknessTracker[t] = {correct:0,total:0});
+  microTracker = {};
+  initMicroTracker();
+  quizHistory = [];
+  beforeAfterSnapshot = null;
+  quiz = null;
+  addXP(50); // Quiz completion bonus
+  await saveProgress();
+  resetQuizUI();
+  renderDashboard(); renderHistory(); renderPlan(); renderFocusMeter(); updateStats();
+});
+
+// Gamification Badges
+const BADGE_DEFS = [
+  { id: 'first_quiz', icon: '🐣', title: 'First Steps', desc: 'Complete your first quiz.' },
+  { id: 'xp_100', icon: '🌟', title: 'Rising Star', desc: 'Earn 100 XP.' },
+  { id: 'xp_1000', icon: '👑', title: '1000 XP Club', desc: 'Earn 1000 XP.' },
+  { id: 'streak_3', icon: '🔥', title: 'On Fire', desc: 'Maintain a 3-day streak.' }
+];
+
+function checkBadges() {
+    let unlocked = false;
+    
+    if (quizHistory.length > 0 && !badges.includes('first_quiz')) { badges.push('first_quiz'); unlocked = true; }
+    if (xp >= 100 && !badges.includes('xp_100')) { badges.push('xp_100'); unlocked = true; }
+    if (xp >= 1000 && !badges.includes('xp_1000')) { badges.push('xp_1000'); unlocked = true; }
+    if (streak >= 3 && !badges.includes('streak_3')) { badges.push('streak_3'); unlocked = true; }
+    
+    if (unlocked) {
+        renderBadges();
+        saveProgress();
+    }
+}
+
+function renderBadges() {
+    const container = document.getElementById('badgesContainer');
+    if (!container) return;
+    
+    container.innerHTML = BADGE_DEFS.map(b => {
+        const isUnlocked = badges.includes(b.id);
+        return `
+        <div class="badge-item ${isUnlocked ? 'unlocked' : 'locked'}" title="${b.desc}">
+            <div class="badge-icon">${b.icon}</div>
+            <div class="badge-title">${b.title}</div>
+            <div class="badge-desc">${b.desc}</div>
+        </div>`;
+    }).join('');
+}
+
+// Resources
+function renderResources(){
+  const grid = document.getElementById('resGrid');
+  grid.innerHTML = TOPICS.map(t=>`
+    <div class="res-card">
+      <h4 style="color:${TOPIC_COLOR[t] || 'var(--ink)'}">${t}</h4>
+      <p>AI-generated study materials and notes for ${t}, dynamically aligned with your uploaded syllabus.</p>
+      <button class="btn secondary" style="margin-top:10px" onclick="askCoachForMaterial('${t}')">Ask Coach for Notes ↗</button>
+    </div>`).join('') + `
+    <div class="res-card">
+      <h4>🧠 AI Connected</h4>
+      <p>This session is connected to Groq AI for dynamic quiz generation and coaching based on your syllabus.</p>
+    </div>
+  `;
+}
+
+window.askCoachForMaterial = function(topic) {
+  const quizTabBtn = document.querySelector('button[data-tab="quiz"]');
+  if(quizTabBtn) quizTabBtn.click();
+  const chatInput = document.getElementById('chatInput');
+  if(chatInput) {
+    chatInput.value = "Please provide comprehensive study notes for " + topic + " based on my syllabus.";
+    chatInput.focus();
+  }
+};
+
+async function initializeApp() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isExplicitLogin = urlParams.get('login') === 'true' || urlParams.get('auth') === 'login';
+
+    if (isExplicitLogin) {
+        authToken = null;
+        currentUser = null;
+        localStorage.removeItem('aec_token');
+        localStorage.removeItem('aec_user');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    if (!authToken) {
+        // If user accessed the application directly without logging in and not via explicit login, start at the landing page
+        if (!isExplicitLogin) {
+            window.location.replace('landing.html');
+            return;
+        }
+        document.getElementById('authOverlay').style.display = 'flex';
+        return;
+    }
+    
+    document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = 'inline-block';
+    document.getElementById('welcomeUser').textContent = `Hi, ${currentUser}`;
+
+    try {
+        const res = await fetch(`${API_BASE}/data`, {
+            headers: getAuthHeaders()
+        });
+        
+        if (res.status === 401 || res.status === 403) {
+            handleLogout();
+            return;
+        }
+
+        const data = await res.json();
+        if (data.weaknessTracker && data.quizHistory) {
+            weaknessTracker = data.weaknessTracker;
+            quizHistory = data.quizHistory;
+            if (data.microTracker) microTracker = data.microTracker;
+            
+            xp = data.xp || 0;
+            streak = data.streak || 0;
+            badges = data.badges || [];
+            lastActive = data.lastActive || null;
+            userGrade = data.grade || 'General';
+            targetExam = data.targetExam || 'None';
+            userEmail = data.email || '';
+            customSyllabusName = data.customSyllabusName || '';
+            customSyllabusData = data.customSyllabusData || {};
+            updateCustomSubjectDropdown();
+            
+            document.getElementById('profileDisplayUsername').textContent = currentUser;
+            document.getElementById('profileDisplayEmail').textContent = userEmail;
+            document.getElementById('profileDisplayGradeText').textContent = userGrade;
+            document.getElementById('profileDisplayExamText').textContent = targetExam;
+            
+            document.getElementById('profileGrade').value = userGrade;
+            document.getElementById('profileExam').value = targetExam;
+            
+            // Streak Logic
+            const today = new Date().toDateString();
+            if (lastActive) {
+                const last = new Date(lastActive);
+                const current = new Date();
+                const diffTime = Math.abs(current - last);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (lastActive !== today) {
+                    if (diffDays === 1) streak++;
+                    else streak = 1;
+                }
+            } else {
+                streak = 1;
+            }
+            lastActive = today;
+            saveProgress();
+        }
+    } catch (err) {
+        console.error("Failed to load progress from server", err);
+    }
+    
+    updateXPUI();
+    renderBadges();
+    renderFocusMeter();
+    updateStats();
+    renderDashboard();
+}
+
+initializeApp();
+
+// ================= MULTIPLAYER ARENA LOGIC =================
+const socket = io("http://localhost:3000");
+let currentArenaRoom = null;
+let arenaQuestions = [];
+let currentArenaQ = 0;
+
+document.getElementById('arenaCreateBtn').addEventListener('click', () => {
+    socket.emit('create-room');
+});
+
+document.getElementById('arenaJoinBtn').addEventListener('click', () => {
+    const code = document.getElementById('arenaRoomCode').value.trim();
+    if (code.length === 4) {
+        socket.emit('join-room', code);
+    }
+});
+
+socket.on('room-created', (roomId) => {
+    currentArenaRoom = roomId;
+    document.getElementById('arenaSetup').style.display = 'none';
+    document.getElementById('arenaGame').style.display = 'block';
+    document.getElementById('arenaCurrentRoom').textContent = roomId;
+});
+
+socket.on('player-joined', (count) => {
+    if (!currentArenaRoom) {
+        currentArenaRoom = document.getElementById('arenaRoomCode').value.trim();
+        document.getElementById('arenaSetup').style.display = 'none';
+        document.getElementById('arenaGame').style.display = 'block';
+        document.getElementById('arenaCurrentRoom').textContent = currentArenaRoom;
+    }
+});
+
+socket.on('game-generating', () => {
+    document.getElementById('arenaWaiting').innerHTML = "⚙️ AI is generating battle questions... Get ready!";
+});
+
+socket.on('game-start', (questions) => {
+    arenaQuestions = questions;
+    currentArenaQ = 0;
+    
+    document.getElementById('arenaWaiting').style.display = 'none';
+    document.getElementById('arenaQuiz').style.display = 'block';
+    
+    renderArenaQuestion();
+});
+
+socket.on('score-update', (data) => {
+    const myPlayer = data.players.find(p => p.id === socket.id);
+    const oppPlayer = data.players.find(p => p.id !== socket.id);
+    
+    if (myPlayer) {
+        document.getElementById('arenaMyScore').textContent = myPlayer.score;
+        document.getElementById('arenaMyProgress').style.width = (myPlayer.progress / 5 * 100) + '%';
+    }
+    if (oppPlayer) {
+        document.getElementById('arenaOppScore').textContent = oppPlayer.score;
+        document.getElementById('arenaOppProgress').style.width = (oppPlayer.progress / 5 * 100) + '%';
+    }
+});
+
+socket.on('opponent-disconnected', () => {
+    alert("Opponent disconnected. You win!");
+    addXP(100);
+    resetArena();
+});
+
+socket.on('room-error', (msg) => {
+    const st = document.getElementById('arenaStatus');
+    st.textContent = msg;
+    st.style.display = 'block';
+});
+
+function renderArenaQuestion() {
+    if (currentArenaQ >= arenaQuestions.length) {
+        document.getElementById('arenaQuiz').innerHTML = `<div style="text-align:center; padding:20px; font-size:24px; color:var(--gold);">Battle Complete!</div>`;
+        addXP(50);
+        setTimeout(resetArena, 4000);
+        return;
+    }
+    
+    const q = arenaQuestions[currentArenaQ];
+    document.getElementById('aqProgress').textContent = `Question ${currentArenaQ + 1} / 5`;
+    document.getElementById('aqText').innerHTML = marked.parse(q.q || q.question || "");
+    
+    // Shuffle options
+    let opts = q.o ? [...q.o] : [];
+    opts.sort(() => Math.random() - 0.5);
+    
+    const optsHtml = opts.map((opt, i) => `<button class="opt" id="aqOpt${i}" onclick="submitArenaAnswer('${opt}', ${i}, '${q.a}')">${marked.parse(opt || '').replace(/<p>|<\/p>/g,'')}</button>`).join('');
+    document.getElementById('aqOptions').innerHTML = optsHtml;
+    document.getElementById('aqExplain').style.display = 'none';
+    if(window.MathJax) MathJax.typesetPromise();
+}
+
+window.submitArenaAnswer = function(selected, idx, correct) {
+    const isCorrect = (selected === correct);
+    socket.emit('submit-answer', { roomId: currentArenaRoom, qIndex: currentArenaQ, isCorrect });
+    
+    const btns = document.getElementById('aqOptions').querySelectorAll('.opt');
+    btns.forEach(b => b.disabled = true);
+    
+    document.getElementById(`aqOpt${idx}`).classList.add(isCorrect ? 'correct' : 'wrong');
+    
+    if(isCorrect) addXP(20);
+    
+    setTimeout(() => {
+        currentArenaQ++;
+        renderArenaQuestion();
+    }, 1500);
+};
+
+function resetArena() {
+    currentArenaRoom = null;
+    arenaQuestions = [];
+    document.getElementById('arenaSetup').style.display = 'block';
+    document.getElementById('arenaGame').style.display = 'none';
+    document.getElementById('arenaQuiz').style.display = 'none';
+    document.getElementById('arenaQuiz').innerHTML = `
+        <div id="aqProgress" class="q-progress">Question 1 / 5</div>
+        <div id="aqText" class="q-text" style="font-size:18px;"></div>
+        <div id="aqOptions" class="options"></div>
+        <div id="aqExplain" class="explain-box"></div>
+    `;
+    document.getElementById('arenaWaiting').style.display = 'block';
+    document.getElementById('arenaWaiting').innerHTML = "⏳ Waiting for opponent to join...";
+    document.getElementById('arenaMyScore').textContent = '0';
+    document.getElementById('arenaOppScore').textContent = '0';
+    document.getElementById('arenaMyProgress').style.width = '0%';
+    document.getElementById('arenaOppProgress').style.width = '0%';
+}
+
+// Auth UI Events
+document.getElementById('showRegister').onclick = (e) => { e.preventDefault(); document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; document.getElementById('authError').style.display = 'none'; };
+document.getElementById('showLogin').onclick = (e) => { e.preventDefault(); document.getElementById('registerForm').style.display = 'none'; document.getElementById('loginForm').style.display = 'block'; document.getElementById('authError').style.display = 'none'; };
+
+function showError(msg) {
+    const err = document.getElementById('authError');
+    err.textContent = msg;
+    err.style.display = 'block';
+}
+
+document.getElementById('loginBtn').onclick = async () => {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) return showError('Please fill all fields');
+    
+    try {
+        const res = await fetch(`${API_BASE}/login`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.error) return showError(data.error);
+        
+        authToken = data.token;
+        currentUser = data.username;
+        customSyllabusName = data.customSyllabusName || '';
+        customSyllabusData = data.customSyllabusData || {};
+        updateCustomSubjectDropdown();
+        localStorage.setItem('aec_token', authToken);
+        localStorage.setItem('aec_user', currentUser);
+        initializeApp();
+    } catch (e) { showError('Failed to login'); }
+};
+
+document.getElementById('registerBtn').onclick = async () => {
+    const username = document.getElementById('regUsername').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+    if (!username || !email || !password) return showError('Please fill all fields');
+    
+    try {
+        const res = await fetch(`${API_BASE}/register`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ username, email, password })
+        });
+        const data = await res.json();
+        if (data.error) return showError(data.error);
+        
+        authToken = data.token;
+        currentUser = data.username;
+        customSyllabusName = data.customSyllabusName || '';
+        customSyllabusData = data.customSyllabusData || {};
+        updateCustomSubjectDropdown();
+        localStorage.setItem('aec_token', authToken);
+        localStorage.setItem('aec_user', currentUser);
+        
+        // Setup initial default progress for new user
+        xp = data.xp || 0;
+        streak = data.streak || 0;
+        badges = data.badges || [];
+        saveProgress();
+        
+        initializeApp();
+    } catch (e) { showError('Failed to register'); }
+};
+
+function handleLogout() {
+    authToken = null;
+    currentUser = null;
+    localStorage.removeItem('aec_token');
+    localStorage.removeItem('aec_user');
+    window.location.href = 'landing.html';
+}
+document.getElementById('logoutBtn').onclick = handleLogout;
+
+document.getElementById('welcomeUserBtn').onclick = () => {
+    document.getElementById('profileDisplayUsername').textContent = currentUser;
+    document.getElementById('profileDisplayEmail').textContent = userEmail || 'No email provided';
+    document.getElementById('profileDisplayGradeText').textContent = userGrade;
+    document.getElementById('profileDisplayExamText').textContent = targetExam;
+    document.getElementById('profileDisplaySyllabusText').textContent = customSyllabusName || 'None';
+    document.getElementById('profileViewMode').style.display = 'block';
+    document.getElementById('editProfileBtn').style.display = 'block';
+    document.getElementById('profileEditMode').style.display = 'none';
+    document.getElementById('profileOverlay').style.display = 'flex';
+};
+
+document.getElementById('editProfileBtn').onclick = () => {
+    document.getElementById('profileViewMode').style.display = 'none';
+    document.getElementById('editProfileBtn').style.display = 'none';
+    document.getElementById('profileEditMode').style.display = 'block';
+};
+
+document.getElementById('cancelEditProfileBtn').onclick = () => {
+    document.getElementById('profileGrade').value = userGrade;
+    document.getElementById('profileExam').value = targetExam;
+    document.getElementById('profileViewMode').style.display = 'block';
+    document.getElementById('editProfileBtn').style.display = 'block';
+    document.getElementById('profileEditMode').style.display = 'none';
+};
+
+document.getElementById('closeProfileBtn').onclick = () => {
+    document.getElementById('profileOverlay').style.display = 'none';
+};
+
+document.getElementById('saveProfileBtn').onclick = async () => {
+    const grade = document.getElementById('profileGrade').value;
+    const exam = document.getElementById('profileExam').value;
+    
+    try {
+        const res = await fetch(`${API_BASE}/profile`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ grade, targetExam: exam })
+        });
+        
+        if (res.ok) {
+            userGrade = grade;
+            targetExam = exam;
+            
+            document.getElementById('profileDisplayGradeText').textContent = grade;
+            document.getElementById('profileDisplayExamText').textContent = exam;
+            
+            const msg = document.getElementById('profileSaveMsg');
+            msg.style.display = 'block';
+            
+            setTimeout(() => {
+                msg.style.display = 'none';
+                document.getElementById('profileViewMode').style.display = 'block';
+                document.getElementById('editProfileBtn').style.display = 'block';
+                document.getElementById('profileEditMode').style.display = 'none';
+            }, 1000);
+        }
+    } catch (err) {
+        console.error("Failed to save profile", err);
+    }
+};
+
+document.getElementById('uploadSyllabusBtn').onclick = async () => {
+    const fileInput = document.getElementById('profileSyllabusInput');
+    const statusDiv = document.getElementById('syllabusUploadStatus');
+    
+    if (fileInput.files.length === 0) {
+        statusDiv.style.display = 'block';
+        statusDiv.textContent = 'Please select a file first.';
+        statusDiv.style.color = 'var(--accent-red)';
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        statusDiv.style.display = 'block';
+        statusDiv.textContent = 'File exceeds 10MB limit.';
+        statusDiv.style.color = 'var(--accent-red)';
+        return;
+    }
+    
+    statusDiv.style.display = 'block';
+    statusDiv.textContent = 'Uploading and parsing syllabus... ⏳';
+    statusDiv.style.color = 'var(--ink-soft)';
+    
+    const formData = new FormData();
+    formData.append('syllabus', file);
+    
+    try {
+        const res = await fetch(`${API_BASE}/profile/syllabus`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (data.error) {
+            statusDiv.textContent = `Error: ${data.error}`;
+            statusDiv.style.color = 'var(--accent-red)';
+        } else {
+            statusDiv.textContent = 'Syllabus uploaded successfully! ✓';
+            statusDiv.style.color = 'var(--accent-teal)';
+            customSyllabusName = data.syllabusName;
+            customSyllabusData = data.customSyllabusData || {};
+            updateCustomSubjectDropdown();
+            document.getElementById('profileDisplaySyllabusText').textContent = customSyllabusName;
+        }
+    } catch (e) {
+        statusDiv.textContent = 'Failed to upload syllabus.';
+        statusDiv.style.color = 'var(--accent-red)';
+    }
+};
