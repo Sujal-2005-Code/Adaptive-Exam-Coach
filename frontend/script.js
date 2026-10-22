@@ -1104,8 +1104,6 @@ async function initializeApp() {
             document.getElementById('profileDisplayEmail').textContent = userEmail;
             document.getElementById('profileDisplayGradeText').textContent = userGrade;
             document.getElementById('profileDisplayExamText').textContent = targetExam;
-            const hExam = document.getElementById('headerExamText');
-            if (hExam) hExam.textContent = (targetExam && targetExam !== 'None') ? `${targetExam} Prep` : 'General Prep';
             
             document.getElementById('profileGrade').value = userGrade;
             document.getElementById('profileExam').value = targetExam;
@@ -1395,8 +1393,6 @@ document.getElementById('saveProfileBtn').onclick = async () => {
             
             document.getElementById('profileDisplayGradeText').textContent = grade;
             document.getElementById('profileDisplayExamText').textContent = exam;
-            const hExamSaved = document.getElementById('headerExamText');
-            if (hExamSaved) hExamSaved.textContent = (exam && exam !== 'None') ? `${exam} Prep` : 'General Prep';
             
             const msg = document.getElementById('profileSaveMsg');
             msg.style.display = 'block';
