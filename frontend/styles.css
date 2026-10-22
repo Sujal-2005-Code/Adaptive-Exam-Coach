@@ -57,7 +57,6 @@ body{
   min-height: 100vh;
   position: relative;
   width: 100%;
-  overflow-x: hidden;
 }
 
 .app-main-content {
@@ -67,6 +66,7 @@ body{
   flex-direction: column;
   min-height: 100vh;
   margin-left: 275px;
+  padding-top: 68px;
   transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .app-layout.sidebar-collapsed .app-main-content {
@@ -567,6 +567,10 @@ body.sidebar-open .sidebar-backdrop {
 @media (max-width: 1024px) {
   .app-main-content {
     margin-left: 0 !important;
+    padding-top: 68px;
+  }
+  .topbar-container {
+    left: 0 !important;
   }
   .sidebar-edge-toggle {
     display: none !important;
@@ -592,31 +596,50 @@ body.sidebar-open .sidebar-backdrop {
   }
 }
 
-/* ---------- Modern Topbar Header ---------- */
-.topbar-container{
-  position:sticky;
-  top:0;
-  z-index:900;
-  background:var(--paper);
+/* ---------- Modern Topbar Header (Fixed) ---------- */
+.topbar-container {
+  position: fixed;
+  top: 0;
+  left: 275px;
+  right: 0;
+  height: 68px;
+  z-index: 1000;
+  background: var(--paper);
   background-image: repeating-linear-gradient(var(--paper) 0px, var(--paper) 27px, var(--line) 28px);
-  border-bottom:1.5px solid var(--card-border);
-  box-shadow:0 2px 8px rgba(31,42,68,0.05);
+  border-bottom: 1.5px solid var(--card-border);
+  box-shadow: 0 2px 8px rgba(31, 42, 68, 0.05);
   backdrop-filter: blur(10px);
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
-:root.dark .topbar-container{
-  background:#171C2B;
+:root.dark .topbar-container {
+  background: #171C2B;
 }
-.topbar-inner{
-  max-width:1220px;
-  margin:0 auto;
-  padding:12px 24px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
+.app-layout.sidebar-collapsed .topbar-container {
+  left: 0;
 }
-@media (max-width:768px){
-  .topbar-inner{padding:10px 16px; flex-wrap:wrap;}
+.topbar-inner {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 100%;
+}
+@media (max-width: 768px) {
+  .topbar-container {
+    height: auto;
+    min-height: 68px;
+  }
+  .topbar-inner {
+    padding: 10px 16px;
+    flex-wrap: wrap;
+    height: auto;
+  }
+  .app-main-content {
+    padding-top: 80px;
+  }
 }
 .brand{
   display:flex;
