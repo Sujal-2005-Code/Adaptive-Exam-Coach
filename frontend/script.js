@@ -272,6 +272,9 @@ if (sidebarBackdrop) {
 
 window.switchActiveTab = function(tabName) {
   if (!tabName) return;
+  document.body.dataset.activeTab = tabName;
+  const layout = document.getElementById('appLayout') || document.querySelector('.app-layout');
+  if (layout) layout.dataset.activeTab = tabName;
   // Update visible sidebar navigation
   document.querySelectorAll('#sidebarTabs .sidebar-tab-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tabName);

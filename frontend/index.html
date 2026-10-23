@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SmartPrep AI - Adaptive Exam Coach</title>
-<link rel="stylesheet" href="styles.css?v=3.3">
+<link rel="stylesheet" href="styles.css?v=3.4">
 <link rel="icon" href="assets/AEC logo.png">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -17,7 +17,7 @@
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 
 </head>
-<body>
+<body data-active-tab="quiz">
 <!-- Auth Overlay -->
 <div id="authOverlay" class="auth-overlay" style="display:none;">
   <div class="auth-card">
@@ -389,8 +389,8 @@
 
     <div class="wrap">
 
-      <div class="admit-card">
-        <div class="admit-goal-card">
+      <div class="admit-card" id="admitCard">
+        <div class="admit-goal-card" id="admitGoalCard">
           <div class="admit-goal-header">
             <div class="goal-icon-circle">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1521,7 +1521,7 @@
   <span class="coach-pulse-dot"></span>
 </button>
 
-<script src="script.js?v=3.3"></script>
+<script src="script.js?v=3.4"></script>
 
 </body>
 </html>

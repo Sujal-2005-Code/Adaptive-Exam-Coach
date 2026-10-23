@@ -4995,7 +4995,17 @@ html, body {
   box-sizing: border-box;
 }
 
-/* 2. Tablet Screen Adjustments (769px to 1024px) */
+/* 2. Mobile & Tablet: Remove "Active Objective" Box from all sections except Adaptive Quiz */
+@media (max-width: 1024px) {
+  body:not([data-active-tab="quiz"]) .admit-card,
+  body:not([data-active-tab="quiz"]) .admit-goal-card,
+  .app-layout:not([data-active-tab="quiz"]) .admit-card,
+  .app-layout:not([data-active-tab="quiz"]) .admit-goal-card {
+    display: none !important;
+  }
+}
+
+/* 3. Tablet Screen Adjustments (769px to 1024px) */
 @media (min-width: 769px) and (max-width: 1024px) {
   .main-container {
     padding: 0 20px;
