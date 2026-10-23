@@ -1746,7 +1746,8 @@ window.askCoachForMaterial = function(topic) {
 
 async function initializeApp() {
     const urlParams = new URLSearchParams(window.location.search);
-    const isExplicitLogin = urlParams.get('login') === 'true' || urlParams.get('auth') === 'login';
+    const isExplicitRegister = urlParams.get('register') === 'true' || urlParams.get('auth') === 'register';
+    const isExplicitLogin = urlParams.get('login') === 'true' || urlParams.get('auth') === 'login' || isExplicitRegister;
 
     if (isExplicitLogin) {
         authToken = null;
@@ -1761,6 +1762,9 @@ async function initializeApp() {
         if (!isExplicitLogin) {
             window.location.replace('landing.html');
             return;
+        }
+        if (typeof setAuthMode === 'function') {
+            setAuthMode(isExplicitRegister ? 'register' : 'login');
         }
         document.getElementById('authOverlay').style.display = 'flex';
         return;
@@ -1841,9 +1845,47 @@ initializeApp();
 // ================= MULTIPLAYER ARENA 2.0 =================
 // Full real-time socket architecture implemented at bottom of script.js
 
-// Auth UI Events
-document.getElementById('showRegister').onclick = (e) => { e.preventDefault(); document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; document.getElementById('authError').style.display = 'none'; };
-document.getElementById('showLogin').onclick = (e) => { e.preventDefault(); document.getElementById('registerForm').style.display = 'none'; document.getElementById('loginForm').style.display = 'block'; document.getElementById('authError').style.display = 'none'; };
+// Auth UI Events & Mode Switcher
+function setAuthMode(mode) {
+    const isLogin = mode === 'login';
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const tabLoginBtn = document.getElementById('tabLoginBtn');
+    const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+    const authError = document.getElementById('authError');
+
+    if (loginForm) loginForm.style.display = isLogin ? 'flex' : 'none';
+    if (registerForm) registerForm.style.display = isLogin ? 'none' : 'flex';
+    if (tabLoginBtn) tabLoginBtn.classList.toggle('active', isLogin);
+    if (tabRegisterBtn) tabRegisterBtn.classList.toggle('active', !isLogin);
+    if (authError) authError.style.display = 'none';
+}
+
+const showRegister = document.getElementById('showRegister');
+if (showRegister) showRegister.onclick = (e) => { e.preventDefault(); setAuthMode('register'); };
+const showLogin = document.getElementById('showLogin');
+if (showLogin) showLogin.onclick = (e) => { e.preventDefault(); setAuthMode('login'); };
+const tabLoginBtn = document.getElementById('tabLoginBtn');
+if (tabLoginBtn) tabLoginBtn.onclick = () => setAuthMode('login');
+const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+if (tabRegisterBtn) tabRegisterBtn.onclick = () => setAuthMode('register');
+
+// Password Visibility Toggles
+document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+    btn.onclick = () => {
+        const targetId = btn.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        const eyeShow = btn.querySelector('.eye-show');
+        const eyeHide = btn.querySelector('.eye-hide');
+        if (eyeShow && eyeHide) {
+            eyeShow.style.display = isPassword ? 'none' : 'block';
+            eyeHide.style.display = isPassword ? 'block' : 'none';
+        }
+    };
+});
 
 function showError(msg) {
     const err = document.getElementById('authError');
@@ -1920,13 +1962,34 @@ const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
 if (sidebarLogoutBtn) sidebarLogoutBtn.onclick = handleLogout;
 
 function openCandidateProfileModal() {
-    document.getElementById('profileDisplayUsername').textContent = currentUser;
+    document.getElementById('profileDisplayUsername').textContent = currentUser || 'Student';
     document.getElementById('profileDisplayEmail').textContent = userEmail || 'No email provided';
-    document.getElementById('profileDisplayGradeText').textContent = userGrade;
-    document.getElementById('profileDisplayExamText').textContent = targetExam;
-    document.getElementById('profileDisplaySyllabusText').textContent = customSyllabusName || 'None';
+    document.getElementById('profileDisplayGradeText').textContent = userGrade || 'General';
+    document.getElementById('profileDisplayExamText').textContent = targetExam || 'None';
+    document.getElementById('profileDisplaySyllabusText').textContent = customSyllabusName || 'No custom syllabus attached';
+    
+    // Update syllabus status pill
+    const statusPill = document.getElementById('syllabusStatusPill');
+    if (statusPill) {
+        if (customSyllabusName) {
+            statusPill.textContent = 'Active Dossier';
+            statusPill.style.background = 'rgba(34, 197, 94, 0.12)';
+            statusPill.style.color = '#16A34A';
+        } else {
+            statusPill.textContent = 'Standard Mode';
+            statusPill.style.background = 'rgba(180, 128, 31, 0.12)';
+            statusPill.style.color = 'var(--gold)';
+        }
+    }
+    
+    // Set avatar initial
+    const avatarBadge = document.getElementById('profileAvatarBadge');
+    if (avatarBadge && currentUser) {
+        avatarBadge.textContent = currentUser.charAt(0).toUpperCase();
+    }
+    
     document.getElementById('profileViewMode').style.display = 'block';
-    document.getElementById('editProfileBtn').style.display = 'block';
+    document.getElementById('editProfileBtn').style.display = 'flex';
     document.getElementById('profileEditMode').style.display = 'none';
     document.getElementById('profileOverlay').style.display = 'flex';
 }
@@ -2036,12 +2099,32 @@ document.getElementById('uploadSyllabusBtn').onclick = async () => {
             customSyllabusData = data.customSyllabusData || {};
             updateCustomSubjectDropdown();
             document.getElementById('profileDisplaySyllabusText').textContent = customSyllabusName;
+            const statusPill = document.getElementById('syllabusStatusPill');
+            if (statusPill) {
+                statusPill.textContent = 'Active Dossier';
+                statusPill.style.background = 'rgba(34, 197, 94, 0.12)';
+                statusPill.style.color = '#16A34A';
+            }
         }
     } catch (e) {
         statusDiv.textContent = 'Failed to upload syllabus.';
         statusDiv.style.color = 'var(--accent-red)';
     }
 };
+
+const syllabusInput = document.getElementById('profileSyllabusInput');
+if (syllabusInput) {
+    syllabusInput.addEventListener('change', () => {
+        const chosenFileName = document.getElementById('chosenFileName');
+        if (chosenFileName && syllabusInput.files.length > 0) {
+            const f = syllabusInput.files[0];
+            const sizeMb = (f.size / (1024 * 1024)).toFixed(1);
+            chosenFileName.textContent = `${f.name} (${sizeMb} MB)`;
+            chosenFileName.style.color = 'var(--ink)';
+            chosenFileName.style.fontWeight = '700';
+        }
+    });
+}
 
 /* ==========================================================================
    MULTIPLAYER ARENA 2.0 - REAL-TIME BATTLE CLIENT ENGINE

@@ -3747,28 +3747,768 @@ table.hist tr:last-child td{ border-bottom:none; }
 .shake { animation: shake 0.3s ease-in-out; }
 
 /* Auth Modal Styles */
+/* ================= AUTHENTICATION & SCHOLAR PROFILE MODALS ================= */
 .auth-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(31, 42, 68, 0.48); backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex; justify-content: center; align-items: center;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   z-index: 99999;
+  padding: 16px;
+  overflow-y: auto;
 }
 :root.dark .auth-overlay {
-  background: rgba(10, 14, 23, 0.68);
+  background: rgba(5, 8, 15, 0.78);
 }
+
 .auth-card {
-  background: var(--paper); border: 2px solid var(--card-border);
-  border-radius: 12px; padding: 30px; width: 90%; max-width: 400px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 20px;
+  padding: 30px 26px 24px;
+  width: 100%;
+  max-width: 430px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24), 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+  max-height: 92vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  animation: modalPop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalPop {
+  0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Auth Brand Header */
+.auth-brand-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.auth-stamp-wrap {
+  position: relative;
+  margin-bottom: 8px;
+}
+.auth-stamp-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2.5px solid var(--red);
+  color: var(--red);
+  font-family: 'Kalam', cursive;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(181, 56, 44, 0.08);
+  box-shadow: 0 4px 14px rgba(181, 56, 44, 0.18);
+}
+.auth-sparkle-dot {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  color: var(--gold);
+  font-size: 14px;
+  animation: gentleFloat 2.2s ease-in-out infinite;
+}
+.auth-title {
+  font-family: 'Kalam', cursive;
+  font-size: 25px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 3px;
+  line-height: 1.15;
+}
+.auth-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+.auth-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(180, 128, 31, 0.1);
+  border: 1px solid rgba(180, 128, 31, 0.28);
+  color: var(--gold);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* Segmented Auth Switcher Tabs */
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--paper-2);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.auth-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.auth-tab-btn:hover {
+  color: var(--ink);
+}
+.auth-tab-btn.active {
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Error Banner */
+.auth-error-banner {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(181, 56, 44, 0.1);
+  border: 1px solid rgba(181, 56, 44, 0.3);
+  color: var(--red);
+  font-size: 12.5px;
+  text-align: center;
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+
+/* Form Input Elements */
+.auth-form-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.auth-field-group {
+  margin-bottom: 14px;
+  text-align: left;
+}
+.auth-field-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.auth-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
 }
 .auth-input {
-  width: 100%; padding: 12px; margin-bottom: 15px;
-  border-radius: 8px; border: 1.5px solid var(--card-border);
-  background: var(--paper-2); color: var(--ink);
-  font-family: 'IBM Plex Sans', sans-serif; font-size: 14px;
+  width: 100%;
+  height: 44px;
+  padding: 10px 14px 10px 42px;
+  border-radius: 10px;
+  border: 1.5px solid var(--card-border);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  outline: none;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.03);
 }
-.auth-input:focus { outline: 2px solid var(--gold); }
+.auth-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(180, 128, 31, 0.16);
+  background: var(--card);
+}
+.password-toggle-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  z-index: 2;
+}
+.password-toggle-btn:hover {
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Submit Action Button */
+.auth-submit-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #FFFFFF;
+  border: 1.5px solid var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(31, 42, 68, 0.22);
+  margin-top: 8px;
+}
+.auth-submit-btn:hover {
+  background: #151D30;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(31, 42, 68, 0.3);
+}
+.auth-submit-btn:active {
+  transform: translateY(0);
+}
+.auth-switch-text {
+  text-align: center;
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.auth-link {
+  color: var(--gold);
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 4px;
+}
+.auth-link:hover {
+  text-decoration: underline;
+  color: var(--red);
+}
+.auth-card-footer {
+  text-align: center;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--card-border);
+}
+.auth-back-link {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  transition: color 0.15s;
+}
+.auth-back-link:hover {
+  color: var(--red);
+}
+
+/* ================= SCHOLAR PROFILE SECTION MODAL ================= */
+.profile-card-wrap {
+  max-width: 460px;
+  padding: 26px 24px 22px;
+}
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--card-border);
+}
+.profile-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.profile-header-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(180, 128, 31, 0.12);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.profile-card-title {
+  font-family: 'Kalam', cursive;
+  font-size: 21px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.profile-card-sub {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  display: block;
+  font-weight: 500;
+}
+.profile-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid var(--card-border);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.profile-close-btn:hover {
+  background: var(--card);
+  color: var(--red);
+  border-color: var(--red);
+  transform: scale(1.05);
+}
+
+/* Identity Card */
+.profile-identity-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--paper-2);
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--card-border);
+  margin-bottom: 16px;
+}
+.profile-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.profile-avatar-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1F2A44;
+  color: #FFFFFF;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--gold);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+.profile-online-beacon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #22C55E;
+  border: 2px solid var(--paper-2);
+}
+.profile-identity-info {
+  min-width: 0;
+  flex: 1;
+}
+.profile-identity-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+.profile-username-text {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profile-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16A34A;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.profile-email-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+}
+.profile-email-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Profile Specs Grid (View Mode) */
+.profile-view-section {
+  display: flex;
+  flex-direction: column;
+}
+.profile-specs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.profile-spec-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--paper-2);
+  border: 1.5px solid var(--card-border);
+}
+.spec-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.spec-icon-stage {
+  background: rgba(180, 128, 31, 0.12);
+  color: var(--gold);
+}
+.spec-icon-exam {
+  background: rgba(181, 56, 44, 0.12);
+  color: var(--red);
+}
+.spec-icon-doc {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563EB;
+}
+.spec-info-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.spec-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 2px;
+}
+.spec-value-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.spec-value-badge.badge-exam {
+  background: rgba(181, 56, 44, 0.08);
+  border-color: rgba(181, 56, 44, 0.25);
+  color: var(--red);
+}
+.spec-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.syllabus-status-pill {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16A34A;
+}
+.spec-doc-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-edit-btn {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid var(--card-border);
+  background: var(--card);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.profile-edit-btn:hover {
+  background: var(--paper-2);
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: translateY(-1px);
+}
+
+/* Edit Mode Components */
+.profile-edit-section {
+  display: flex;
+  flex-direction: column;
+}
+.profile-edit-field {
+  margin-bottom: 14px;
+}
+.edit-field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.profile-select {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--card-border);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.profile-select:focus {
+  border-color: var(--gold);
+}
+
+/* Syllabus Dropzone in Edit Mode */
+.syllabus-upload-zone {
+  background: var(--paper-2);
+  border: 1.5px dashed var(--card-border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.upload-zone-header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.upload-zone-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.upload-zone-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 2px;
+}
+.upload-zone-desc {
+  font-size: 11px;
+  color: var(--ink-soft);
+  line-height: 1.35;
+  margin: 0;
+}
+.file-picker-wrapper {
+  margin-bottom: 8px;
+}
+.custom-file-input {
+  display: none;
+}
+.file-picker-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.file-picker-label:hover {
+  border-color: var(--gold);
+  color: var(--ink);
+}
+.file-picker-label svg {
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.upload-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.upload-btn {
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+}
+.syllabus-status-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.profile-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+.cancel-profile-btn {
+  height: 42px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 10px;
+  justify-content: center;
+}
+.save-profile-btn {
+  height: 42px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: 10px;
+  justify-content: center;
+  gap: 6px;
+}
+.profile-success-toast {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #16A34A;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Dark Mode Overrides for Auth & Profile */
+:root.dark .auth-card {
+  background: #1A2030;
+  border-color: #2E374E;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+:root.dark .auth-input {
+  background: #141824;
+  border-color: #2E374E;
+  color: #EDE7D3;
+}
+:root.dark .auth-input:focus {
+  background: #181E2E;
+  border-color: var(--gold);
+}
+:root.dark .auth-submit-btn {
+  background: var(--gold);
+  color: #121622;
+  border-color: var(--gold);
+}
+:root.dark .auth-submit-btn:hover {
+  background: #E8BF65;
+}
+:root.dark .profile-identity-card,
+:root.dark .profile-spec-item,
+:root.dark .syllabus-upload-zone,
+:root.dark .profile-select {
+  background: #141824;
+  border-color: #2E374E;
+}
+:root.dark .spec-value-badge {
+  background: #1A2030;
+  border-color: #2E374E;
+}
+:root.dark .file-picker-label {
+  background: #1A2030;
+  border-color: #2E374E;
+  color: #B7BEDB;
+}
+:root.dark .profile-edit-btn {
+  background: #141824;
+  border-color: #2E374E;
+  color: #EDE7D3;
+}
+:root.dark .profile-edit-btn:hover {
+  background: #1A2030;
+  border-color: var(--gold);
+  color: var(--gold);
+}
 
 /* ==========================================================================
    MULTIPLAYER ARENA 2.0 - FULL DESIGN SYSTEM & COMPONENT STYLING
@@ -6163,14 +6903,52 @@ html, body {
     font-size: 13px !important;
   }
 
-  /* Candidate Profile Modal on Mobile */
+  /* Candidate Profile & Auth Modals on Mobile */
+  .auth-overlay {
+    padding: 10px !important;
+  }
   .auth-card {
-    width: 94vw !important;
-    max-width: 420px !important;
-    padding: 20px 16px !important;
-    border-radius: 16px !important;
-    max-height: 90vh !important;
+    width: 96vw !important;
+    max-width: 400px !important;
+    padding: 22px 16px 18px !important;
+    border-radius: 18px !important;
+    max-height: 92vh !important;
     overflow-y: auto !important;
+  }
+  .profile-card-wrap {
+    padding: 20px 14px 16px !important;
+  }
+  .profile-identity-card {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+  .profile-avatar-circle {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 20px !important;
+  }
+  .profile-username-text {
+    font-size: 15.5px !important;
+  }
+  .profile-spec-item {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+  .spec-icon-box {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .spec-icon-box svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .auth-title {
+    font-size: 22px !important;
+  }
+  .auth-stamp-circle {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 19px !important;
   }
 
   /* App Footer on Mobile */
