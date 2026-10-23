@@ -228,11 +228,15 @@ const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
 const sidebarBackdrop = document.getElementById('sidebarBackdrop');
 
 function toggleSidebar() {
+  const edgeBtn = document.getElementById('sidebarEdgeToggleBtn');
   if (window.innerWidth <= 1024) {
-    document.body.classList.toggle('sidebar-open');
+    const isNowOpen = document.body.classList.toggle('sidebar-open');
+    if (edgeBtn) {
+      edgeBtn.title = isNowOpen ? "Hide Sidebar Menu" : "Show Sidebar Menu";
+      edgeBtn.setAttribute('aria-expanded', String(isNowOpen));
+    }
   } else {
     const layout = document.getElementById('appLayout') || document.querySelector('.app-layout');
-    const edgeBtn = document.getElementById('sidebarEdgeToggleBtn');
     if (layout) {
       const isCollapsed = layout.classList.toggle('sidebar-collapsed');
       if (edgeBtn) {
@@ -245,6 +249,11 @@ function toggleSidebar() {
 
 function closeSidebar() {
   document.body.classList.remove('sidebar-open');
+  const edgeBtn = document.getElementById('sidebarEdgeToggleBtn');
+  if (edgeBtn && window.innerWidth <= 1024) {
+    edgeBtn.title = "Show Sidebar Menu";
+    edgeBtn.setAttribute('aria-expanded', 'false');
+  }
 }
 
 window.toggleSidebar = toggleSidebar;
@@ -253,7 +262,13 @@ window.closeSidebar = closeSidebar;
 if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', toggleSidebar);
 if (sidebarEdgeToggleBtn) sidebarEdgeToggleBtn.addEventListener('click', toggleSidebar);
 if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
-if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
+if (sidebarBackdrop) {
+  sidebarBackdrop.addEventListener('click', closeSidebar);
+  sidebarBackdrop.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    closeSidebar();
+  }, { passive: false });
+}
 
 window.switchActiveTab = function(tabName) {
   if (!tabName) return;
@@ -1192,7 +1207,10 @@ const coachHeaderBtn = document.getElementById('coachHeaderBtn');
 if (coachHeaderBtn) coachHeaderBtn.addEventListener('click', window.toggleCoachDrawer);
 
 const sidebarCoachBtn = document.getElementById('sidebarCoachBtn');
-if (sidebarCoachBtn) sidebarCoachBtn.addEventListener('click', window.toggleCoachDrawer);
+if (sidebarCoachBtn) sidebarCoachBtn.addEventListener('click', () => {
+  if (typeof closeSidebar === 'function') closeSidebar();
+  if (typeof window.toggleCoachDrawer === 'function') window.toggleCoachDrawer();
+});
 
 const coachCloseBtn = document.getElementById('coachCloseBtn');
 if (coachCloseBtn) coachCloseBtn.addEventListener('click', () => {
@@ -1912,7 +1930,10 @@ function openCandidateProfileModal() {
 const welcomeUserBtn = document.getElementById('welcomeUserBtn');
 if (welcomeUserBtn) welcomeUserBtn.onclick = openCandidateProfileModal;
 const sidebarProfileCard = document.getElementById('sidebarProfileCard');
-if (sidebarProfileCard) sidebarProfileCard.onclick = openCandidateProfileModal;
+if (sidebarProfileCard) sidebarProfileCard.onclick = () => {
+  if (typeof closeSidebar === 'function') closeSidebar();
+  openCandidateProfileModal();
+};
 
 document.getElementById('editProfileBtn').onclick = () => {
     document.getElementById('profileViewMode').style.display = 'none';
