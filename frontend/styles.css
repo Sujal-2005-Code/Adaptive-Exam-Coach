@@ -5075,6 +5075,74 @@ html, body {
   .arena-roster-grid {
     grid-template-columns: repeat(2, 1fr) !important;
   }
+
+  /* Tablet Floating AI Coach Access Button */
+  .coach-floating-btn {
+    bottom: 22px !important;
+    right: 20px !important;
+    width: 54px !important;
+    height: 54px !important;
+    min-width: 54px !important;
+    min-height: 54px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: fixed !important;
+    z-index: 850 !important;
+    background: #1F2A44 !important;
+    border: 2px solid var(--gold) !important;
+    box-shadow: 0 6px 20px rgba(31, 42, 68, 0.35), 0 0 12px rgba(180, 128, 31, 0.3) !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
+  }
+  .coach-floating-btn:active {
+    transform: scale(0.92) !important;
+  }
+  .coach-floating-btn:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 8px 26px rgba(31, 42, 68, 0.42), 0 0 16px rgba(180, 128, 31, 0.42) !important;
+  }
+  .coach-floating-btn .coach-float-content {
+    display: none !important;
+  }
+  .coach-floating-btn .coach-float-title,
+  .coach-floating-btn .coach-float-sub {
+    display: none !important;
+  }
+  .coach-floating-btn .coach-float-icon {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 26px !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    pointer-events: none !important;
+    transform: translateY(-0.5px);
+  }
+  .coach-floating-btn .coach-pulse-dot {
+    position: absolute !important;
+    top: 4px !important;
+    right: 4px !important;
+    width: 11px !important;
+    height: 11px !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    background: #22C55E !important;
+    border: 2px solid #1F2A44 !important;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.9) !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+    animation: pulseGreen 2s infinite !important;
+  }
 }
 
 /* 4. Mobile Screens (<= 768px) - Full Native App Layout */
@@ -6012,25 +6080,80 @@ html, body {
     z-index: 1050 !important;
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35) !important;
   }
+  /* Mobile Floating AI Coach Access Button */
   .coach-floating-btn {
     bottom: 18px !important;
-    right: 14px !important;
-    width: 48px !important;
-    height: 48px !important;
+    right: 16px !important;
+    width: 50px !important;
+    height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
     border-radius: 50% !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: fixed !important;
+    z-index: 850 !important;
+    background: #1F2A44 !important;
+    border: 2px solid var(--gold) !important;
+    box-shadow: 0 4px 18px rgba(31, 42, 68, 0.35), 0 0 10px rgba(180, 128, 31, 0.3) !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease !important;
+  }
+  .coach-floating-btn:active {
+    transform: scale(0.92) !important;
+  }
+  .coach-floating-btn:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 8px 24px rgba(31, 42, 68, 0.4), 0 0 14px rgba(180, 128, 31, 0.4) !important;
+  }
+  .coach-floating-btn .coach-float-content {
+    display: none !important;
+  }
+  .coach-floating-btn .coach-float-title,
+  .coach-floating-btn .coach-float-sub {
+    display: none !important;
+  }
+  .coach-floating-btn .coach-float-icon {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    z-index: 700 !important;
-    box-shadow: 0 4px 16px rgba(180, 128, 31, 0.38) !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    pointer-events: none !important;
+    transform: translateY(-0.5px);
   }
-  .coach-float-title, .coach-float-sub {
-    display: none !important;
-  }
-  .coach-float-icon {
-    font-size: 22px !important;
+  .coach-floating-btn .coach-pulse-dot {
+    position: absolute !important;
+    top: 3px !important;
+    right: 3px !important;
+    width: 10px !important;
+    height: 10px !important;
     margin: 0 !important;
+    border-radius: 50% !important;
+    background: #22C55E !important;
+    border: 2px solid #1F2A44 !important;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.9) !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+    animation: pulseGreen 2s infinite !important;
+  }
+
+  :root.dark .coach-floating-btn {
+    background: #151D30 !important;
+    border-color: var(--gold) !important;
+  }
+  :root.dark .coach-floating-btn .coach-pulse-dot {
+    border-color: #151D30 !important;
   }
   .chat-input-row input {
     font-size: 13px !important;
