@@ -40,6 +40,70 @@ Object.defineProperty(window, 'TOPICS', {
     }
 });
 const TOPIC_COLOR = { Math:"#B4801F", Physics:"#1F2A44", Chemistry:"#3F7A4E", Biology:"#B5382C" };
+const TOPIC_ICONS = {
+  Math: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M4 5h16M7 5l5 14M17 5l-5 14"/></svg>`,
+  Physics: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(30 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-30 12 12)"/></svg>`,
+  Chemistry: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.1 19.34A2 2 0 0 0 5.76 22h12.48a2 2 0 0 0 1.66-2.66L14 9.31V2h-4z"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>`,
+  Biology: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/><path d="M17 6l3-3"/><path d="M4 21l3-3"/></svg>`
+};
+const DEFAULT_TOPIC_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
+
+function getTopicIcon(t) {
+  if (TOPIC_ICONS[t]) return TOPIC_ICONS[t];
+  const lower = String(t || '').toLowerCase();
+  
+  if (lower.includes('data') || lower.includes('dbms') || lower.includes('sql') || lower.includes('storage')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>`;
+  }
+  if (lower.includes('operat') || lower.includes('os') || lower.includes('system') || lower.includes('architect')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>`;
+  }
+  if (lower.includes('comput') || lower.includes('theor') || lower.includes('algo') || lower.includes('logic') || lower.includes('code') || lower.includes('program')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="14" y1="4" x2="10" y2="20"></line></svg>`;
+  }
+  if (lower.includes('net') || lower.includes('web') || lower.includes('cloud') || lower.includes('secur') || lower.includes('crypto')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
+  }
+  if (lower.includes('multi') || lower.includes('inter') || lower.includes('minor') || lower.includes('layer') || lower.includes('core')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>`;
+  }
+  if (lower.includes('elect') || lower.includes('open') || lower.includes('opt') || lower.includes('art') || lower.includes('human')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>`;
+  }
+  if (lower.includes('ai') || lower.includes('intel') || lower.includes('learn') || lower.includes('neural')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"></path><circle cx="9" cy="14" r="1"></circle><circle cx="15" cy="14" r="1"></circle><line x1="9" y1="18" x2="15" y2="18"></line></svg>`;
+  }
+  return DEFAULT_TOPIC_ICON;
+}
+
+function animateCount(el, start, end, duration = 850, suffix = '') {
+  if (!el) return;
+  if (typeof end !== 'number' || isNaN(end)) {
+    el.textContent = end + (suffix || '');
+    return;
+  }
+  const range = end - start;
+  const startTime = performance.now();
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + range * ease);
+    el.textContent = current + suffix;
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      el.textContent = end + suffix;
+    }
+  }
+  requestAnimationFrame(update);
+}
+const TOPIC_NAMES = {
+  Math: "Mathematics",
+  Physics: "Physics",
+  Chemistry: "Chemistry",
+  Biology: "Biology"
+};
 
 let weaknessTracker = {};
 TOPICS.forEach(t => weaknessTracker[t] = {correct:0, total:0});
@@ -665,12 +729,34 @@ function endQuiz(early, timeout = false){
       <div style="font-size:44px; font-weight:700; font-family:'IBM Plex Mono',monospace; color:${pct>=70?'var(--green)':pct>=40?'var(--gold)':'var(--red-soft)'}; margin:8px 0;">${quiz.correctCount}/${quiz.answers.length}</div>
       <div style="color:var(--ink-soft); font-size:13.5px; margin-bottom:18px;">${pct}% correct — the coach has already re-weighted your next quiz.</div>
     </div>
-    <div class="before-after">
-      <div><div class="ba-label">Before this quiz</div>${renderMiniBars(beforeAfterSnapshot.before)}</div>
-      <div class="arrow">➜</div>
-      <div><div class="ba-label">After this quiz</div>${renderMiniBars(beforeAfterSnapshot.after)}</div>
+    <div class="before-after-grid" style="margin: 16px 0;">
+      <div class="ba-card-box">
+        <div class="ba-box-header">
+          <span class="ba-dot dot-before"></span>
+          <span class="ba-box-title">Before Quiz</span>
+          <span class="ba-box-chip">Baseline</span>
+        </div>
+        ${renderMiniBars(beforeAfterSnapshot.before)}
+      </div>
+      <div class="ba-arrow-column">
+        <div class="ba-arrow-circle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </div>
+        <span class="ba-arrow-label">Shift</span>
+      </div>
+      <div class="ba-card-box">
+        <div class="ba-box-header">
+          <span class="ba-dot dot-after"></span>
+          <span class="ba-box-title">After Quiz</span>
+          <span class="ba-box-chip active">Adaptive Weights</span>
+        </div>
+        ${renderMiniBars(beforeAfterSnapshot.after)}
+      </div>
     </div>
-    <div style="margin-top:18px; padding:12px 14px; background:var(--paper-2); border-radius:8px; font-size:13px;">
+    <div style="margin-top:16px; padding:12px 14px; background:var(--paper-2); border-radius:8px; font-size:13px; border:1px solid var(--card-border);">
       <b>Coach's read:</b> your next quiz will lean toward <b style="color:var(--red-soft)">${weak[0].topic}</b>${weak[1]?`, then ${weak[1].topic}`:''} — that's where practice will help most.
     </div>
     <div class="quiz-actions" style="justify-content:center; margin-top:18px;">
@@ -679,22 +765,38 @@ function endQuiz(early, timeout = false){
     </div>
   `;
   document.getElementById('quizAgainBtn').addEventListener('click', ()=> startQuiz(getQuizConfig(),false));
-  document.getElementById('viewDashBtn').addEventListener('click', ()=> document.querySelector('nav.tabs button[data-tab=dashboard]').click());
+  document.getElementById('viewDashBtn').addEventListener('click', ()=> window.switchActiveTab('dashboard'));
   updateStats();
   renderFocusMeter();
 }
 
 function renderMiniBars(weights){
-  const maxW = Math.max(...Object.values(weights));
-  return `<div style="display:flex; gap:8px; align-items:flex-end; height:90px; justify-content:center;">
-    ${TOPICS.map(t=>{
-      const h = Math.max(8, Math.round((weights[t]/maxW)*80));
-      return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-        <div style="width:26px;height:${h}px;background:${TOPIC_COLOR[t]};border-radius:4px 4px 0 0;"></div>
-        <span style="font-size:10px;font-weight:700;color:var(--ink-soft);">${t.slice(0,4)}</span>
-      </div>`;
-    }).join('')}
-  </div>`;
+  const maxW = Math.max(...Object.values(weights)) || 1;
+  return `
+    <div class="ba-bars-wrap">
+      ${TOPICS.map((t, idx)=>{
+        const w = weights[t] || 0;
+        const pct = Math.round((w / maxW) * 100);
+        const color = TOPIC_COLOR[t] || "var(--ink)";
+        const icon = getTopicIcon(t);
+        const h = Math.max(8, Math.round((w / maxW) * 65));
+        const shortName = t.length > 5 ? t.slice(0, 4) + '…' : t;
+        const delay = (idx * 0.08).toFixed(2);
+        return `
+          <div class="ba-mini-col" title="${t}: ${pct}% weight" style="animation: dashBarFadeIn 0.4s ease backwards ${delay}s;">
+            <span class="ba-mini-pct">${pct}%</span>
+            <div class="ba-mini-track">
+              <div class="ba-mini-fill" style="height:${h}px; background:${color}; animation: miniBarRise 0.75s cubic-bezier(0.34, 1.45, 0.64, 1) backwards ${delay}s;"></div>
+            </div>
+            <span class="ba-mini-icon-box" style="color:${color};">
+              ${icon}
+            </span>
+            <span class="ba-mini-label">${shortName}</span>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
 }
 
 // --- Quiz UI Setup Logic ---
@@ -1097,68 +1199,311 @@ addChatMsg("Hi! Ask me about any concept, or just start a quiz — I'll adapt as
 // Dashboard
 function renderDashboard(){
   const bc = document.getElementById('dashBarChart');
-  const accs = TOPICS.map(t=> ({t, acc: accuracy(t)}));
-  const weakestTopic = getTop3Weakest()[0]?.topic;
-  bc.innerHTML = accs.map(({t,acc})=>{
-    const pct = acc===null? 0 : Math.round(acc*100);
-    const cls = acc===null? '' : (acc>=0.7?'strong': acc<0.5?'weak':'');
-    return `<div class="bar-col">
-      <span class="bar-val">${acc===null?'—':pct+'%'}</span>
-      <div class="bar" style="height:${acc===null?4:Math.max(6,pct*1.5)}px; background:${cls==='strong'?'var(--green)':cls==='weak'?'var(--red-soft)':'var(--ink-soft)'}"></div>
-      <span class="bar-name" style="color:${TOPIC_COLOR[t]}">${t}${t===weakestTopic && weaknessTracker[t].total>0 ? ' ⚑':''}</span>
-    </div>`;
-  }).join('');
+  if (bc) {
+    const accs = TOPICS.map(t=> ({t, acc: accuracy(t)}));
+    const weakestTopic = getTop3Weakest()[0]?.topic;
+    bc.innerHTML = accs.map(({t,acc}, idx)=>{
+      const isUntested = acc === null;
+      const pct = isUntested ? 0 : Math.round(acc * 100);
+      const isWeak = t === weakestTopic && weaknessTracker[t] && weaknessTracker[t].total > 0;
+      const cls = isUntested ? 'untested' : (acc >= 0.7 ? 'strong' : acc < 0.5 ? 'weak' : 'neutral');
+      const color = TOPIC_COLOR[t] || "var(--ink)";
+      const icon = getTopicIcon(t);
+      const barHeight = isUntested ? 6 : Math.max(8, Math.round((pct / 100) * 112));
+      const statusBadge = isUntested ? 'Untested' : (acc >= 0.7 ? 'Mastered' : acc < 0.5 ? 'Needs Review' : 'Developing');
+      const delay = (idx * 0.09).toFixed(2);
+      
+      return `
+        <div class="dash-bar-col ${cls}" style="animation: dashBarFadeIn 0.5s ease backwards ${delay}s;">
+          <div class="dash-bar-val-bubble">
+            ${isUntested ? '—' : pct+'%'}
+          </div>
+          <div class="dash-bar-track-slot">
+            <div class="track-tick tick-75" title="70% Benchmark"></div>
+            <div class="track-tick tick-50"></div>
+            <div class="track-tick tick-25"></div>
+            <div class="dash-bar-fill ${cls}" style="height:${barHeight}px; animation: barGrowUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) backwards ${delay}s;">
+              <span class="bar-cap-glow"></span>
+              <span class="bar-shine"></span>
+            </div>
+          </div>
+          <div class="dash-bar-topic-info" title="${t}">
+            <span class="dash-bar-icon-box" style="color:${color}; background:${color}18; border:1.5px solid ${color}35;">
+              ${icon}
+            </span>
+            <span class="dash-bar-topic-name">${t}${isWeak ? ' <span class="flag-icon" title="Weakest Topic">🔥</span>' : ''}</span>
+            <span class="dash-bar-topic-sub ${cls}">${statusBadge}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
   const oa = overallAccuracy();
   const svg = document.getElementById('donutChart');
   const r=55,cx=70,cy=70,circ=2*Math.PI*r;
-  if(oa===null){
-    svg.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--card-border)" stroke-width="16"/>
-      <text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="13" fill="var(--ink-soft)" font-family="IBM Plex Mono">no data</text>`;
-  } else {
-    const correctLen = circ*oa;
-    svg.innerHTML = `
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--paper-2)" stroke-width="16"/>
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--green)" stroke-width="16"
-        stroke-dasharray="${correctLen} ${circ-correctLen}" stroke-linecap="round"
-        transform="rotate(-90 ${cx} ${cy})"/>
-      <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--ink)" font-family="IBM Plex Mono">${Math.round(oa*100)}%</text>
-      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="10" fill="var(--ink-soft)" font-family="IBM Plex Sans">accuracy</text>
-    `;
+  if (svg) {
+    if(oa===null){
+      svg.innerHTML = `
+        <circle cx="${cx}" cy="${cy}" r="64" fill="none" stroke="var(--card-border)" stroke-width="1.2" stroke-dasharray="3 5" opacity="0.6"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--card-border)" stroke-width="14" stroke-dasharray="6 6"/>
+        <circle cx="${cx}" cy="${cy}" r="43" fill="var(--card)"/>
+        <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="20" font-weight="700" fill="var(--ink-soft)" font-family="IBM Plex Mono">—</text>
+        <text x="${cx}" y="${cy+15}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ink-soft)" font-family="IBM Plex Sans">Untested</text>
+      `;
+    } else {
+      const correctLen = circ*oa;
+      const pct = Math.round(oa*100);
+      const isHigh = pct >= 70;
+      const isLow = pct < 50;
+      const strokeColor = isHigh ? 'var(--green)' : (isLow ? 'var(--red-soft)' : 'var(--gold)');
+      
+      svg.innerHTML = `
+        <circle cx="${cx}" cy="${cy}" r="64" fill="none" stroke="var(--card-border)" stroke-width="1.2" stroke-dasharray="3 5" opacity="0.6"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${strokeColor}" stroke-width="14"
+          stroke-dasharray="0 ${circ}" stroke-linecap="round"
+          transform="rotate(-90 ${cx} ${cy})" style="filter: drop-shadow(0 0 10px ${strokeColor}66); transition: stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1);" id="donutRingArc"/>
+        <circle cx="${cx}" cy="${cy}" r="43" fill="var(--card)"/>
+        <text x="${cx}" y="${cy-3}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--ink)" font-family="IBM Plex Mono" id="donutDialVal">0%</text>
+        <text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="10.5" font-weight="700" fill="${strokeColor}" font-family="IBM Plex Sans">${isHigh ? 'Proficient' : isLow ? 'Needs Work' : 'Developing'}</text>
+      `;
+      // Trigger smooth SVG drawing & number count-up
+      requestAnimationFrame(() => {
+        const arc = document.getElementById('donutRingArc');
+        if (arc) arc.style.strokeDasharray = `${correctLen} ${circ - correctLen}`;
+        const dialText = document.getElementById('donutDialVal');
+        if (dialText) animateCount(dialText, 0, pct, 950, '%');
+      });
+    }
   }
-  document.getElementById('donutLegend').innerHTML = `
-    <div><span class="dot" style="background:var(--green)"></span>Correct: <b>${TOPICS.reduce((s,t)=>s+weaknessTracker[t].correct,0)}</b></div>
-    <div><span class="dot" style="background:var(--paper-2); border:1px solid var(--card-border)"></span>Incorrect: <b>${TOPICS.reduce((s,t)=>s+(weaknessTracker[t].total-weaknessTracker[t].correct),0)}</b></div>
-    <div><span class="dot" style="background:var(--ink-soft)"></span>Total answered: <b>${totalAnswered()}</b></div>
-  `;
+
+  const legendEl = document.getElementById('donutLegend');
+  if (legendEl) {
+    const totalAns = totalAnswered();
+    const correctCount = TOPICS.reduce((s,t)=>s+(weaknessTracker[t]?.correct||0),0);
+    const incorrectCount = totalAns - correctCount;
+    const correctPct = totalAns > 0 ? Math.round((correctCount/totalAns)*100) : 0;
+    const incorrectPct = totalAns > 0 ? Math.round((incorrectCount/totalAns)*100) : 0;
+
+    legendEl.innerHTML = `
+      <div class="dash-metric-group">
+        <div class="dash-metric-row metric-correct">
+          <div class="metric-row-left">
+            <span class="metric-indicator-dot" style="background:var(--green); box-shadow:0 0 6px rgba(63,122,78,0.5);"></span>
+            <span class="metric-row-label">Correct Answers</span>
+          </div>
+          <div class="metric-row-right">
+            <span class="metric-row-val" id="valMetricCorrect">0</span>
+            <span class="metric-row-pct">${correctPct}%</span>
+          </div>
+        </div>
+        <div class="metric-mini-track">
+          <div class="metric-mini-fill" id="trackMetricCorrect" style="width:0%; background:var(--green);"></div>
+        </div>
+      </div>
+
+      <div class="dash-metric-group">
+        <div class="dash-metric-row metric-incorrect">
+          <div class="metric-row-left">
+            <span class="metric-indicator-dot" style="background:var(--red-soft); box-shadow:0 0 6px rgba(181,56,44,0.5);"></span>
+            <span class="metric-row-label">Incorrect Answers</span>
+          </div>
+          <div class="metric-row-right">
+            <span class="metric-row-val" id="valMetricIncorrect">0</span>
+            <span class="metric-row-pct">${incorrectPct}%</span>
+          </div>
+        </div>
+        <div class="metric-mini-track">
+          <div class="metric-mini-fill" id="trackMetricIncorrect" style="width:0%; background:var(--red-soft);"></div>
+        </div>
+      </div>
+
+      <div class="dash-metric-group">
+        <div class="dash-metric-row metric-total">
+          <div class="metric-row-left">
+            <span class="metric-indicator-dot" style="background:var(--ink-soft); box-shadow:0 0 6px rgba(74,85,120,0.4);"></span>
+            <span class="metric-row-label">Total Answered</span>
+          </div>
+          <div class="metric-row-right">
+            <span class="metric-row-val" id="valMetricTotal">0</span>
+            <span class="metric-row-pct">${totalAns > 0 ? '100%' : '0%'}</span>
+          </div>
+        </div>
+        <div class="metric-mini-track">
+          <div class="metric-mini-fill" id="trackMetricTotal" style="width:0%; background:var(--ink-soft);"></div>
+        </div>
+      </div>
+    `;
+
+    // Smoothly animate the values and track progress fills
+    requestAnimationFrame(() => {
+      const vCor = document.getElementById('valMetricCorrect');
+      if (vCor) animateCount(vCor, 0, correctCount, 850);
+      const vInc = document.getElementById('valMetricIncorrect');
+      if (vInc) animateCount(vInc, 0, incorrectCount, 850);
+      const vTot = document.getElementById('valMetricTotal');
+      if (vTot) animateCount(vTot, 0, totalAns, 850);
+
+      setTimeout(() => {
+        const tCor = document.getElementById('trackMetricCorrect');
+        if (tCor) tCor.style.width = `${correctPct}%`;
+        const tInc = document.getElementById('trackMetricIncorrect');
+        if (tInc) tInc.style.width = `${incorrectPct}%`;
+        const tTot = document.getElementById('trackMetricTotal');
+        if (tTot) tTot.style.width = `${totalAns > 0 ? 100 : 0}%`;
+      }, 50);
+    });
+  }
 
   const baWrap = document.getElementById('beforeAfterChart');
-  if(!beforeAfterSnapshot){
-    baWrap.innerHTML = `<div class="empty"><div class="big">📈</div>Complete a quiz to see the focus shift visualised here.</div>`;
-  } else {
-    baWrap.innerHTML = `<div class="before-after">
-      <div><div class="ba-label">Before</div>${renderMiniBars(beforeAfterSnapshot.before)}</div>
-      <div class="arrow">➜</div>
-      <div><div class="ba-label">After</div>${renderMiniBars(beforeAfterSnapshot.after)}</div>
-    </div>`;
+  if (baWrap) {
+    if(!beforeAfterSnapshot){
+      baWrap.innerHTML = `
+        <div class="dash-empty-state">
+          <div class="dash-empty-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+              <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+          </div>
+          <div class="dash-empty-title">No Focus Shift Recorded Yet</div>
+          <p class="dash-empty-desc">Complete an adaptive quiz to see how question weighting shifts toward your weaknesses in real time.</p>
+          <button type="button" class="btn secondary dash-empty-btn" onclick="window.switchActiveTab('quiz')">
+            🎯 Start Diagnostic Quiz
+          </button>
+        </div>
+      `;
+    } else {
+      baWrap.innerHTML = `
+        <div class="before-after-grid">
+          <div class="ba-card-box">
+            <div class="ba-box-header">
+              <span class="ba-dot dot-before"></span>
+              <span class="ba-box-title">Before Quiz</span>
+              <span class="ba-box-chip">Baseline</span>
+            </div>
+            ${renderMiniBars(beforeAfterSnapshot.before)}
+          </div>
+
+          <div class="ba-arrow-column">
+            <div class="ba-arrow-circle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+            <span class="ba-arrow-label">Shift</span>
+          </div>
+
+          <div class="ba-card-box">
+            <div class="ba-box-header">
+              <span class="ba-dot dot-after"></span>
+              <span class="ba-box-title">After Quiz</span>
+              <span class="ba-box-chip active">Adaptive Weights</span>
+            </div>
+            ${renderMiniBars(beforeAfterSnapshot.after)}
+          </div>
+        </div>
+      `;
+    }
   }
 
-  const weak = getTop3Weakest();
-  document.getElementById('weakList').innerHTML = weak.map((w,i)=>`
-    <li><span><span class="rank">#${i+1}</span>${w.topic}</span>
-    <span>${w.total>0? fmt(w.acc)+' accuracy · '+w.total+' answered' : 'no data yet'}</span></li>`).join('');
+  const weakListEl = document.getElementById('weakList');
+  if (weakListEl) {
+    const weak = getTop3Weakest();
+    if (weak.length === 0 || weak.every(w => w.total === 0)) {
+      weakListEl.innerHTML = `
+        <div class="dash-empty-state" style="padding:24px 16px;">
+          <div class="dash-empty-icon-wrap" style="width:42px; height:42px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+          </div>
+          <div class="dash-empty-title" style="font-size:14px;">No Weaknesses Identified Yet</div>
+          <p class="dash-empty-desc" style="font-size:11.5px; margin-bottom:12px;">Take a practice quiz so the Socratic engine can map your error patterns and pinpoint weak topics.</p>
+          <button type="button" class="btn secondary dash-empty-btn" onclick="window.switchActiveTab('quiz')">
+            🎯 Begin Evaluation
+          </button>
+        </div>
+      `;
+    } else {
+      const rankClasses = ['rank-1', 'rank-2', 'rank-3'];
+      weakListEl.innerHTML = weak.map((w,i)=>{
+        const color = TOPIC_COLOR[w.topic] || "var(--red-soft)";
+        const icon = getTopicIcon(w.topic);
+        const name = TOPIC_NAMES[w.topic] || w.topic;
+        const hasData = w.total > 0;
+        const accPct = hasData ? Math.round(w.acc * 100) : 0;
+        const rankClass = rankClasses[i] || 'rank-3';
+
+        return `
+          <li class="dash-weak-item" style="animation: weakItemSlideIn 0.4s ease backwards ${(i * 0.1).toFixed(2)}s;">
+            <div class="weak-item-left">
+              <span class="weak-rank-badge ${rankClass}">#${i+1}</span>
+              <span class="weak-icon-circle" style="color:${color}; background:${color}18; border:1px solid ${color}33;">
+                ${icon}
+              </span>
+              <div class="weak-info">
+                <div class="weak-topic-title" title="${name}">${name}</div>
+                <div class="weak-topic-sub">
+                  ${hasData ? `${fmt(w.acc)} accuracy &bull; ${w.total} questions` : 'No attempts logged'}
+                </div>
+              </div>
+            </div>
+            <div class="weak-item-right">
+              <div class="weak-progress-box">
+                <div class="weak-progress-label">${hasData ? `${accPct}% Mastery` : 'Untested'}</div>
+                <div class="weak-progress-track">
+                  <div class="weak-progress-fill" style="width:${accPct}%; background:${hasData && accPct < 50 ? 'var(--red-soft)' : 'var(--gold)'};"></div>
+                </div>
+              </div>
+              <button type="button" class="btn secondary weak-target-btn" onclick="document.getElementById('quizModeSelect').value='custom'; window.switchActiveTab('quiz');" title="Drill into ${name}">
+                Target 🎯
+              </button>
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+  }
 
   updateStats();
 }
 
 function updateStats(){
-  document.getElementById('statQuizzes').textContent = quizHistory.length;
+  const sq = document.getElementById('statQuizzes');
+  if (sq) animateCount(sq, 0, quizHistory.length, 650);
   const oa = overallAccuracy();
-  document.getElementById('statAccuracy').textContent = oa===null ? '—' : fmt(oa);
-  document.getElementById('statAnswered').textContent = totalAnswered();
+  const sa = document.getElementById('statAccuracy');
+  if (sa) sa.textContent = oa===null ? '—' : fmt(oa);
+  const sans = document.getElementById('statAnswered');
+  if (sans) animateCount(sans, 0, totalAnswered(), 650);
   const weak = getTop3Weakest();
-  document.getElementById('statWeakest').textContent = weak[0] && weak[0].total>0 ? weak[0].topic : '—';
+  const weakestName = weak[0] && weak[0].total>0 ? (TOPIC_NAMES[weak[0].topic] || weak[0].topic) : '—';
+  const sw = document.getElementById('statWeakest');
+  if (sw) sw.textContent = weakestName;
+
+  // Sync Dashboard KPI cards with animated count-up
+  const kpiAcc = document.getElementById('dashKpiAccuracy');
+  if (kpiAcc) {
+    if (oa === null) {
+      kpiAcc.textContent = '—';
+    } else {
+      animateCount(kpiAcc, 0, Math.round(oa * 100), 800, '%');
+    }
+  }
+  const kpiAns = document.getElementById('dashKpiAnswered');
+  if (kpiAns) animateCount(kpiAns, 0, totalAnswered(), 800);
+  const kpiQuiz = document.getElementById('dashKpiQuizzes');
+  if (kpiQuiz) animateCount(kpiQuiz, 0, quizHistory.length, 800);
+  const kpiWeak = document.getElementById('dashKpiWeakest');
+  if (kpiWeak) kpiWeak.textContent = weakestName;
 }
+window.renderDashboard = renderDashboard;
+window.weakness_tracker = weakness_tracker;
 
 // AI Study Plan
 async function renderPlan(){
