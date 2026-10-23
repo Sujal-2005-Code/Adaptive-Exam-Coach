@@ -232,18 +232,40 @@ if (sidebarTabsEl) {
   });
 }
 
-document.getElementById('themeToggle').addEventListener('click', ()=>{
-  document.documentElement.classList.toggle('dark');
+function updateThemeToggleUI() {
   const dark = document.documentElement.classList.contains('dark');
-  document.getElementById('themeToggle').textContent = dark ? '☀️ Light' : '🌙 Dark';
-  document.getElementById('themeToggle').classList.toggle('active', dark);
-});
-document.getElementById('focusToggle').addEventListener('click', ()=>{
-  document.body.classList.toggle('focus-mode');
-  const on = document.body.classList.contains('focus-mode');
-  document.getElementById('focusToggle').classList.toggle('active', on);
-  document.querySelectorAll('nav.tabs, header .brand p').forEach(el=> el.style.opacity = on? '0.35':'1');
-});
+  const themeToggle = document.getElementById('themeToggle');
+  if (!themeToggle) return;
+  themeToggle.classList.toggle('active', dark);
+  
+  const iconWrap = document.getElementById('themeIconWrap');
+  const label = document.getElementById('themeLabel');
+  
+  const moonSvg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+  const sunSvg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+  
+  if (iconWrap) iconWrap.innerHTML = dark ? sunSvg : moonSvg;
+  if (label) label.textContent = dark ? 'Light' : 'Dark';
+}
+
+const themeToggleBtn = document.getElementById('themeToggle');
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', ()=>{
+    document.documentElement.classList.toggle('dark');
+    updateThemeToggleUI();
+  });
+  updateThemeToggleUI();
+}
+
+const focusToggleBtn = document.getElementById('focusToggle');
+if (focusToggleBtn) {
+  focusToggleBtn.addEventListener('click', ()=>{
+    document.body.classList.toggle('focus-mode');
+    const on = document.body.classList.contains('focus-mode');
+    focusToggleBtn.classList.toggle('active', on);
+    document.querySelectorAll('nav.tabs, header .brand p').forEach(el=> el.style.opacity = on? '0.35':'1');
+  });
+}
 
 function renderFocusMeter(){
   const w = currentWeights();
