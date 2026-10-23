@@ -234,6 +234,40 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// Reset / Forgot Password Route
+app.post('/api/reset-password', async (req, res) => {
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({ error: 'Database is still establishing connection. Please try again in 5 seconds.' });
+    }
+    try {
+        const { email, newPassword, confirmPassword } = req.body;
+        if (!email || !newPassword) {
+            return res.status(400).json({ error: 'Please provide both your registered email address and new password.' });
+        }
+        if (newPassword.length < 6) {
+            return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+        }
+        if (confirmPassword && newPassword !== confirmPassword) {
+            return res.status(400).json({ error: 'New password and confirm password do not match.' });
+        }
+        
+        const cleanEmail = String(email).toLowerCase().trim();
+        const user = await User.findOne({ email: cleanEmail });
+        if (!user) {
+            return res.status(404).json({ error: 'No account registered with this email address.' });
+        }
+        
+        // Triggers UserSchema.pre('save') which hashes with bcrypt
+        user.password = newPassword;
+        await user.save();
+        
+        res.json({ success: true, message: 'Password has been updated successfully! You can now log in.' });
+    } catch (error) {
+        console.error('Password reset error:', error);
+        res.status(500).json({ error: 'Failed to reset password: ' + error.message });
+    }
+});
+
 // Protected Data Routes
 app.get('/api/data', authenticateToken, async (req, res) => {
     try {

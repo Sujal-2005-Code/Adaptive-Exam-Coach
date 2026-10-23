@@ -1848,17 +1848,33 @@ initializeApp();
 // Auth UI Events & Mode Switcher
 function setAuthMode(mode) {
     const isLogin = mode === 'login';
+    const isRegister = mode === 'register';
+    const isForgot = mode === 'forgot';
+
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
     const tabLoginBtn = document.getElementById('tabLoginBtn');
     const tabRegisterBtn = document.getElementById('tabRegisterBtn');
     const authError = document.getElementById('authError');
+    const authSuccess = document.getElementById('authSuccess');
 
     if (loginForm) loginForm.style.display = isLogin ? 'flex' : 'none';
-    if (registerForm) registerForm.style.display = isLogin ? 'none' : 'flex';
+    if (registerForm) registerForm.style.display = isRegister ? 'flex' : 'none';
+    if (forgotPasswordForm) forgotPasswordForm.style.display = isForgot ? 'flex' : 'none';
+
     if (tabLoginBtn) tabLoginBtn.classList.toggle('active', isLogin);
-    if (tabRegisterBtn) tabRegisterBtn.classList.toggle('active', !isLogin);
+    if (tabRegisterBtn) tabRegisterBtn.classList.toggle('active', isRegister);
     if (authError) authError.style.display = 'none';
+    if (authSuccess && !isLogin) authSuccess.style.display = 'none';
+
+    if (isForgot) {
+        const loginEmail = document.getElementById('loginEmail');
+        const forgotEmail = document.getElementById('forgotEmail');
+        if (loginEmail && forgotEmail && loginEmail.value.trim() && !forgotEmail.value.trim()) {
+            forgotEmail.value = loginEmail.value.trim();
+        }
+    }
 }
 
 const showRegister = document.getElementById('showRegister');
@@ -1869,6 +1885,22 @@ const tabLoginBtn = document.getElementById('tabLoginBtn');
 if (tabLoginBtn) tabLoginBtn.onclick = () => setAuthMode('login');
 const tabRegisterBtn = document.getElementById('tabRegisterBtn');
 if (tabRegisterBtn) tabRegisterBtn.onclick = () => setAuthMode('register');
+
+// Forgot Password Navigation
+const showForgotPassword = document.getElementById('showForgotPassword');
+if (showForgotPassword) {
+    showForgotPassword.onclick = (e) => {
+        e.preventDefault();
+        setAuthMode('forgot');
+    };
+}
+const backToLoginFromForgot = document.getElementById('backToLoginFromForgot');
+if (backToLoginFromForgot) {
+    backToLoginFromForgot.onclick = (e) => {
+        e.preventDefault();
+        setAuthMode('login');
+    };
+}
 
 // Password Visibility Toggles
 document.querySelectorAll('.password-toggle-btn').forEach(btn => {
@@ -1889,8 +1921,77 @@ document.querySelectorAll('.password-toggle-btn').forEach(btn => {
 
 function showError(msg) {
     const err = document.getElementById('authError');
-    err.textContent = msg;
-    err.style.display = 'block';
+    if (err) {
+        err.textContent = msg;
+        err.style.display = 'block';
+    }
+    const succ = document.getElementById('authSuccess');
+    if (succ) succ.style.display = 'none';
+}
+
+function showAuthSuccess(msg) {
+    const succ = document.getElementById('authSuccess');
+    if (succ) {
+        succ.textContent = msg;
+        succ.style.display = 'flex';
+    }
+    const err = document.getElementById('authError');
+    if (err) err.style.display = 'none';
+}
+
+// Reset / Change Password Action
+const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+if (resetPasswordBtn) {
+    resetPasswordBtn.onclick = async () => {
+        const email = (document.getElementById('forgotEmail')?.value || '').trim();
+        const newPassword = document.getElementById('forgotNewPassword')?.value || '';
+        const confirmPassword = document.getElementById('forgotConfirmPassword')?.value || '';
+
+        if (!email || !newPassword || !confirmPassword) {
+            return showError('Please fill in all fields.');
+        }
+        if (newPassword.length < 6) {
+            return showError('New password must be at least 6 characters long.');
+        }
+        if (newPassword !== confirmPassword) {
+            return showError('New password and confirm password do not match.');
+        }
+
+        resetPasswordBtn.disabled = true;
+        const originalText = resetPasswordBtn.innerHTML;
+        resetPasswordBtn.innerHTML = '<span>Updating Password...</span>';
+
+        try {
+            const res = await fetch(`${API_BASE}/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, newPassword, confirmPassword })
+            });
+            const data = await res.json();
+            if (data.error) {
+                showError(data.error);
+                return;
+            }
+
+            // Success!
+            setAuthMode('login');
+            showAuthSuccess('✓ Password updated successfully! Please sign in with your new password.');
+            const loginEmail = document.getElementById('loginEmail');
+            if (loginEmail) loginEmail.value = email;
+            const loginPassword = document.getElementById('loginPassword');
+            if (loginPassword) {
+                loginPassword.value = '';
+                loginPassword.focus();
+            }
+            if (document.getElementById('forgotNewPassword')) document.getElementById('forgotNewPassword').value = '';
+            if (document.getElementById('forgotConfirmPassword')) document.getElementById('forgotConfirmPassword').value = '';
+        } catch (e) {
+            showError('Unable to connect to server. Please try again.');
+        } finally {
+            resetPasswordBtn.disabled = false;
+            resetPasswordBtn.innerHTML = originalText;
+        }
+    };
 }
 
 document.getElementById('loginBtn').onclick = async () => {
