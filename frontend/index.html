@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SmartPrep AI - Adaptive Exam Coach</title>
-<link rel="stylesheet" href="styles.css?v=1.8">
+<link rel="stylesheet" href="styles.css?v=1.9">
 <link rel="icon" href="assets/AEC logo.png">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -319,66 +319,69 @@
           </a>
         </div>
         
-        <!-- 2. Center: Scholar Station Capsule (Streak & XP Metrics) -->
-        <div class="scholar-station" title="Your Daily Academic Performance Metrics">
-          <!-- Streak Indicator -->
-          <div id="streakDisplay" class="station-pod streak-pod" title="Consecutive Practice Days">
-            <div class="pod-icon flame-glow">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2c.6 2.6-1.2 4.6-2.5 6.4C8.2 10.2 7 12 7 14.5 7 18.1 9.9 21 13.5 21c3.6 0 6.5-2.9 6.5-6.5 0-3-1.8-5.3-3.3-7.2-1.2-1.5-2.2-3.2-1.7-5.3-.8.7-1.7 1.8-2 3.1-.4 1.7.2 3.4-.5 4.9-.7 1.6-2.2 2.6-2.2 4.5 0 1.7 1.3 3 3 3s3-1.3 3-3c0-1.8-1.2-3.1-2.1-4.4-.8-1.2-1.7-2.7-1.2-5.1z"/>
-              </svg>
+        <!-- 2. Right: Metrics & Action Controls Group -->
+        <div class="topbar-right-group">
+          <!-- Scholar Station Capsule (Streak & XP Metrics) -->
+          <div class="scholar-station" title="Your Daily Academic Performance Metrics">
+            <!-- Streak Indicator -->
+            <div id="streakDisplay" class="station-pod streak-pod" title="Consecutive Practice Days">
+              <div class="pod-icon flame-glow">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2c.6 2.6-1.2 4.6-2.5 6.4C8.2 10.2 7 12 7 14.5 7 18.1 9.9 21 13.5 21c3.6 0 6.5-2.9 6.5-6.5 0-3-1.8-5.3-3.3-7.2-1.2-1.5-2.2-3.2-1.7-5.3-.8.7-1.7 1.8-2 3.1-.4 1.7.2 3.4-.5 4.9-.7 1.6-2.2 2.6-2.2 4.5 0 1.7 1.3 3 3 3s3-1.3 3-3c0-1.8-1.2-3.1-2.1-4.4-.8-1.2-1.7-2.7-1.2-5.1z"/>
+                </svg>
+              </div>
+              <div class="pod-info">
+                <span class="pod-val" id="streakCount">0</span>
+                <span class="pod-lbl">Days</span>
+              </div>
             </div>
-            <div class="pod-info">
-              <span class="pod-val" id="streakCount">0</span>
-              <span class="pod-lbl">Days</span>
+
+            <!-- Vertical Micro-Divider -->
+            <div class="station-divider"></div>
+
+            <!-- XP Indicator -->
+            <div id="xpDisplay" class="station-pod xp-pod" title="Total Earned Experience Points">
+              <div class="pod-icon star-glow">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </div>
+              <div class="pod-info">
+                <span class="pod-val" id="xpCount">0</span>
+                <span class="pod-lbl">XP</span>
+              </div>
             </div>
           </div>
 
-          <!-- Vertical Micro-Divider -->
-          <div class="station-divider"></div>
+          <!-- Action Controls (Focus Mode & Theme Toggle) -->
+          <div class="top-controls">
+            <button class="header-action-btn focus-toggle-btn" id="focusToggle" title="Toggle Focus Mode (Dim Distractions)">
+              <span class="btn-icon-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="6" r="6"/>
+                  <circle cx="12" cy="12" r="2"/>
+                </svg>
+              </span>
+              <span class="btn-label">Focus</span>
+              <span class="focus-glow-dot"></span>
+            </button>
 
-          <!-- XP Indicator -->
-          <div id="xpDisplay" class="station-pod xp-pod" title="Total Earned Experience Points">
-            <div class="pod-icon star-glow">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
+            <button class="header-action-btn theme-toggle-btn" id="themeToggle" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
+              <span class="btn-icon-wrap" id="themeIconWrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              </span>
+              <span class="btn-label" id="themeLabel">Dark</span>
+            </button>
+
+            <!-- Backwards-compatibility hidden proxies for existing scripts -->
+            <div style="display:none;" aria-hidden="true">
+              <button id="welcomeUserBtn"><span id="welcomeUser">Student</span></button>
+              <button class="icon-btn coach-header-toggle" id="coachHeaderBtn">🎓 Coach</button>
+              <button class="icon-btn logout-btn" id="logoutBtn">🚪</button>
             </div>
-            <div class="pod-info">
-              <span class="pod-val" id="xpCount">0</span>
-              <span class="pod-lbl">XP</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Right: Action Controls (Focus Mode & Theme Toggle) -->
-        <div class="top-controls">
-          <button class="header-action-btn focus-toggle-btn" id="focusToggle" title="Toggle Focus Mode (Dim Distractions)">
-            <span class="btn-icon-wrap">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <circle cx="12" cy="6" r="6"/>
-                <circle cx="12" cy="12" r="2"/>
-              </svg>
-            </span>
-            <span class="btn-label">Focus</span>
-            <span class="focus-glow-dot"></span>
-          </button>
-
-          <button class="header-action-btn theme-toggle-btn" id="themeToggle" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
-            <span class="btn-icon-wrap" id="themeIconWrap">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            </span>
-            <span class="btn-label" id="themeLabel">Dark</span>
-          </button>
-
-          <!-- Backwards-compatibility hidden proxies for existing scripts -->
-          <div style="display:none;" aria-hidden="true">
-            <button id="welcomeUserBtn"><span id="welcomeUser">Student</span></button>
-            <button class="icon-btn coach-header-toggle" id="coachHeaderBtn">🎓 Coach</button>
-            <button class="icon-btn logout-btn" id="logoutBtn">🚪</button>
           </div>
         </div>
       </div>

@@ -650,7 +650,7 @@ body.sidebar-open .sidebar-backdrop {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1 1 0;
+  flex-shrink: 0;
   min-width: 0;
 }
 .brand {
@@ -729,11 +729,23 @@ body.sidebar-open .sidebar-backdrop {
   .brand-subtitle { display: none; }
 }
 
-/* Center: Scholar Station Status Capsule */
+/* Right: Metrics + Action Controls Group */
+.topbar-right-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+@media (max-width: 900px) {
+  .topbar-right-group { gap: 8px; }
+}
+
+/* Scholar Station Status Capsule */
 .scholar-station {
   display: inline-flex;
   align-items: center;
-  flex: 0 0 auto;
+  flex-shrink: 0;
   background: var(--card);
   border: 1.5px solid var(--card-border);
   border-radius: 30px;
@@ -751,7 +763,7 @@ body.sidebar-open .sidebar-backdrop {
   border-color: #333B57;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
-@media (max-width: 880px) {
+@media (max-width: 900px) {
   .pod-lbl { display: none; }
   .station-pod { padding: 5px 8px; gap: 6px; }
 }
@@ -842,13 +854,12 @@ body.sidebar-open .sidebar-backdrop {
   opacity: 0.8;
 }
 
-/* Right: Action Suite (Focus Mode & Theme Switcher) */
+/* Action Suite (Focus Mode & Theme Switcher) */
 .top-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1 1 0;
-  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
 }
 @media (max-width: 520px) {
   .header-action-btn .btn-label { display: none; }
