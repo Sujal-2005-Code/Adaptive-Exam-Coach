@@ -1109,6 +1109,514 @@
       cursor: pointer;
       color: var(--ink-soft);
     }
+
+    /* ================= 9. COMPREHENSIVE RESPONSIVE SYSTEM (TABLET & MOBILE) ================= */
+
+    /* Quick Jump Mobile Navigation Bar (below header on <= 900px) */
+    .mobile-nav-bar {
+      display: none;
+      width: 100%;
+      background: rgba(250, 246, 237, 0.98);
+      border-bottom: 1.5px solid var(--border);
+      padding: 8px 14px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      position: sticky;
+      top: 60px;
+      z-index: 99;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .mobile-nav-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .mobile-nav-track {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: max-content;
+      margin: 0 auto;
+    }
+    .mobile-nav-pill {
+      font-family: 'Kalam', cursive;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--ink);
+      text-decoration: none;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(31, 42, 68, 0.05);
+    }
+    .mobile-nav-pill.active {
+      background: var(--red-btn);
+      color: #FFFFFF;
+      border-color: var(--red-btn);
+      box-shadow: 0 2px 6px rgba(181, 56, 44, 0.25);
+    }
+    .mobile-nav-pill.pill-login {
+      background: rgba(180, 128, 31, 0.12);
+      color: var(--gold);
+      border-color: rgba(180, 128, 31, 0.3);
+    }
+
+    /* ---------- Tablet View (769px to 1024px) ---------- */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .margin-rule {
+        left: 28px;
+        opacity: 0.28;
+      }
+      .container {
+        padding: 0 20px 0 46px;
+        max-width: 100%;
+      }
+      .header-container {
+        padding: 10px 20px 10px 46px;
+      }
+      .brand-text h1 {
+        font-size: 22px;
+      }
+      .brand-text p {
+        font-size: 8.5px;
+        letter-spacing: 0.08em;
+      }
+      .hero-section {
+        padding: 32px 0;
+      }
+      .hero-grid {
+        flex-direction: column;
+        text-align: center;
+        gap: 28px;
+      }
+      .hero-content {
+        max-width: 640px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .hero-title {
+        font-size: 34px;
+        line-height: 1.25;
+        margin-bottom: 20px;
+      }
+      .hero-btn-group {
+        justify-content: center;
+      }
+      .hero-visual {
+        justify-content: center;
+        max-width: 480px;
+      }
+      .hero-composition {
+        min-height: 280px;
+      }
+      .student-study-img {
+        width: 60%;
+        max-width: 280px;
+      }
+      .floating-dashboard-img {
+        width: 50%;
+        max-width: 240px;
+        top: 10px;
+      }
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 16px;
+      }
+      .steps-row {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 16px;
+      }
+      .step-arrow {
+        display: none !important;
+      }
+      .step-card {
+        min-width: 0 !important;
+      }
+      .smarter-grid {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 24px;
+      }
+      .smarter-divider {
+        display: none;
+      }
+      .stats-card-panel {
+        min-width: 320px;
+        max-width: 480px;
+        width: 100%;
+      }
+      .testimonial-card {
+        padding: 24px 32px;
+        gap: 24px;
+      }
+      .cta-banner {
+        padding: 24px 32px;
+      }
+      .footer-container {
+        padding: 0 20px 0 46px;
+      }
+      .footer-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 28px;
+      }
+    }
+
+    /* ---------- Mobile View (<= 768px) ---------- */
+    @media (max-width: 768px) {
+      .mobile-nav-bar {
+        display: block;
+      }
+      .margin-rule {
+        left: 12px;
+        opacity: 0.18;
+      }
+      .container {
+        padding: 0 12px 0 24px;
+        max-width: 100%;
+      }
+
+      /* Header */
+      header.site-header {
+        position: sticky;
+        top: 0;
+        height: 60px;
+        z-index: 100;
+      }
+      .header-container {
+        padding: 0 12px 0 24px;
+        height: 100%;
+        gap: 8px;
+      }
+      .brand-wrap {
+        gap: 8px;
+        min-width: 0;
+      }
+      .stamp-logo {
+        width: 32px;
+        height: 32px;
+        font-size: 15px;
+        border-width: 2px;
+        flex-shrink: 0;
+      }
+      .brand-text h1 {
+        font-size: 19px;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .brand-text p {
+        display: none;
+      }
+      .header-actions .btn {
+        padding: 7px 15px;
+        font-size: 13px;
+        border-radius: 20px;
+        flex-shrink: 0;
+      }
+
+      /* Hero Section */
+      .hero-section {
+        padding: 20px 0 26px;
+      }
+      .hero-grid {
+        flex-direction: column;
+        text-align: center;
+        gap: 18px;
+      }
+      .hero-content {
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .hero-title {
+        font-size: clamp(22px, 6vw, 28px);
+        line-height: 1.25;
+        margin-bottom: 14px;
+      }
+      .hero-title br {
+        display: inline;
+      }
+      .hero-btn-group {
+        width: 100%;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .hero-btn-group .btn {
+        padding: 9px 18px;
+        font-size: 14px;
+        min-height: 42px;
+      }
+      .trusted-group {
+        justify-content: center;
+        gap: 8px;
+      }
+      .avatar-circle-img {
+        width: 28px;
+        height: 28px;
+        margin-left: -6px;
+      }
+      .trusted-text {
+        font-size: 13.5px;
+      }
+      .hero-visual {
+        justify-content: center;
+        max-width: 340px;
+        width: 100%;
+        margin: 0 auto;
+      }
+      .hero-composition {
+        min-height: 200px;
+        max-width: 320px;
+        margin: 0 auto;
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      .student-study-img {
+        width: 60%;
+        max-width: 200px;
+      }
+      .floating-dashboard-img {
+        width: 52%;
+        max-width: 170px;
+        right: -6px;
+        top: 4px;
+      }
+
+      /* Section Divider Titles */
+      .section-divider-title {
+        font-size: 18.5px !important;
+        margin: 28px 0 16px !important;
+        gap: 8px !important;
+        line-height: 1.3 !important;
+        text-align: center !important;
+      }
+      .section-divider-title::before,
+      .section-divider-title::after {
+        max-width: 20px !important;
+      }
+
+      /* Features Grid */
+      .features-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .feature-card {
+        padding: 13px 12px !important;
+        border-radius: 12px !important;
+        gap: 12px !important;
+        align-items: center !important;
+      }
+      .feat-icon-box {
+        width: 42px !important;
+        height: 42px !important;
+        border-radius: 10px !important;
+        flex-shrink: 0 !important;
+      }
+      .feat-icon-box svg {
+        width: 22px !important;
+        height: 22px !important;
+      }
+      .feat-content h3 {
+        font-size: 16px !important;
+        margin-bottom: 2px !important;
+      }
+      .feat-content p {
+        font-size: 12.5px !important;
+        line-height: 1.35 !important;
+      }
+
+      /* How It Works Steps (2x2 Grid) */
+      .steps-row {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+      }
+      .step-arrow {
+        display: none !important;
+      }
+      .step-card {
+        min-width: 0 !important;
+        padding: 16px 10px 12px !important;
+        border-radius: 12px !important;
+      }
+      .step-badge {
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 11px !important;
+        top: -9px !important;
+      }
+      .step-icon-box {
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 10px !important;
+        margin: 2px auto 6px !important;
+      }
+      .step-icon-box svg {
+        width: 20px !important;
+        height: 20px !important;
+      }
+      .step-card h4 {
+        font-size: 13px !important;
+        line-height: 1.25 !important;
+      }
+
+      /* Learn Smarter Section */
+      .smarter-section {
+        padding: 8px 0 14px !important;
+      }
+      .smarter-grid {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 16px !important;
+        text-align: center !important;
+      }
+      .smarter-art-img {
+        width: 160px !important;
+        max-width: 60% !important;
+      }
+      .checklist {
+        width: 100% !important;
+        max-width: 300px !important;
+        gap: 10px !important;
+      }
+      .check-item {
+        font-size: 15.5px !important;
+        gap: 10px !important;
+        justify-content: flex-start !important;
+      }
+      .check-circle {
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 12px !important;
+      }
+      .smarter-divider {
+        display: none !important;
+      }
+      .stats-card-panel {
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 320px !important;
+        padding: 14px 10px 10px !important;
+        border-radius: 14px !important;
+      }
+      .stat-val {
+        font-size: 25px !important;
+      }
+      .stat-name {
+        font-size: 12px !important;
+      }
+
+      /* Testimonials */
+      .testimonial-card {
+        flex-direction: column !important;
+        text-align: center !important;
+        padding: 18px 14px !important;
+        gap: 12px !important;
+        border-radius: 14px !important;
+      }
+      .test-avatar-img {
+        width: 64px !important;
+        height: 64px !important;
+      }
+      .test-content h4 {
+        font-size: 17.5px !important;
+      }
+      .test-role {
+        font-size: 12px !important;
+      }
+      .stars {
+        font-size: 15px !important;
+        margin-bottom: 3px !important;
+      }
+      .test-quote {
+        font-size: 13.5px !important;
+        line-height: 1.4 !important;
+      }
+
+      /* CTA Banner */
+      .cta-banner {
+        flex-direction: column !important;
+        text-align: center !important;
+        padding: 18px 14px !important;
+        margin: 24px 0 18px !important;
+        gap: 12px !important;
+        border-radius: 14px !important;
+      }
+      .cta-left {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 8px !important;
+      }
+      .rocket-cta-img {
+        width: 50px !important;
+        height: 46px !important;
+      }
+      .cta-title {
+        font-size: 18px !important;
+        line-height: 1.25 !important;
+      }
+      .cta-banner .btn-red {
+        width: 100% !important;
+        max-width: 220px !important;
+        padding: 9px 18px !important;
+        font-size: 14px !important;
+      }
+
+      /* Footer */
+      footer.site-footer {
+        padding: 26px 0 18px !important;
+        margin-top: 26px !important;
+      }
+      .footer-container {
+        padding: 0 12px 0 24px !important;
+      }
+      .footer-grid {
+        grid-template-columns: 1fr !important;
+        gap: 18px !important;
+        margin-bottom: 18px !important;
+      }
+      .footer-col h4 {
+        font-size: 16.5px !important;
+        margin-bottom: 6px !important;
+      }
+      .footer-col p {
+        font-size: 13px !important;
+        margin-bottom: 8px !important;
+      }
+      .footer-col ul a {
+        font-size: 13px !important;
+      }
+      .footer-brand-motto {
+        font-size: 12px !important;
+        padding: 4px 10px !important;
+      }
+      .footer-bottom-bar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        font-size: 11.5px !important;
+      }
+
+      /* Walkthrough Modal */
+      .modal-card {
+        max-width: 94vw !important;
+        padding: 16px 12px !important;
+        border-radius: 14px !important;
+        max-height: 88vh !important;
+        overflow-y: auto !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1143,6 +1651,18 @@
       </div>
     </div>
   </header>
+
+  <!-- Quick Jump Mobile Navigation Bar (Mobile & Tablet) -->
+  <nav class="mobile-nav-bar" id="mobileNavBar" aria-label="Quick Section Navigation">
+    <div class="mobile-nav-track">
+      <a href="#home" class="mobile-nav-pill active">Home</a>
+      <a href="#features" class="mobile-nav-pill">Features</a>
+      <a href="#how-it-works" class="mobile-nav-pill">How It Works</a>
+      <a href="#why-us" class="mobile-nav-pill">Why Us</a>
+      <a href="#testimonials" class="mobile-nav-pill">Reviews</a>
+      <a href="index.html?login=true" class="mobile-nav-pill pill-login">Get In →</a>
+    </div>
+  </nav>
 
   <!-- Main Wide Content Container -->
   <div class="container">
@@ -1588,35 +2108,47 @@
       if (e.target === demoModal) hideModal();
     });
 
-    // Dynamic Header Navigation Active State (Click + ScrollSpy)
-    const navLinks = document.querySelectorAll('.nav-links a');
-    const sections = Array.from(navLinks).map(link => {
+    // Dynamic Header Navigation Active State (Click + ScrollSpy for Desktop & Mobile)
+    const allNavLinks = document.querySelectorAll('.nav-links a, .mobile-nav-pill');
+    const sections = Array.from(document.querySelectorAll('.nav-links a')).map(link => {
       const href = link.getAttribute('href');
       return href && href.startsWith('#') ? document.querySelector(href) : null;
     }).filter(Boolean);
 
     function setActiveNav(targetHref) {
-      navLinks.forEach(link => {
+      allNavLinks.forEach(link => {
         if (link.getAttribute('href') === targetHref) {
           link.classList.add('active');
-        } else {
+        } else if (!link.classList.contains('pill-login')) {
           link.classList.remove('active');
         }
       });
     }
 
-    navLinks.forEach(link => {
-      link.addEventListener('click', () => {
+    allNavLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
         const href = link.getAttribute('href');
         if (href && href.startsWith('#')) {
-          setActiveNav(href);
+          const target = document.querySelector(href);
+          if (target) {
+            e.preventDefault();
+            const headerOffset = window.innerWidth <= 900 ? 110 : 75;
+            const elementPosition = target.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+            setActiveNav(href);
+          }
         }
       });
     });
 
     // ScrollSpy to update active link on scroll
     window.addEventListener('scroll', () => {
-      const scrollPos = window.scrollY + 140; // Offset for sticky header
+      const offset = window.innerWidth <= 900 ? 120 : 85;
+      const scrollPos = window.scrollY + offset + 20;
       let currentSectionId = '';
 
       for (let i = 0; i < sections.length; i++) {
