@@ -41,14 +41,14 @@ body{
   padding-bottom:0;
 }
 .wrap{
-  max-width:1220px;
-  margin:0 auto;
-  padding:20px 24px 60px;
-  position:relative;
-  z-index:1;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20px 32px 36px;
+  position: relative;
+  z-index: 1;
 }
 @media (max-width:768px){
-  .wrap{padding:16px 16px 40px;}
+  .wrap{padding:16px 16px 30px;}
 }
 
 /* ---------- App Layout & Responsive Sidebar Navigation ---------- */
@@ -621,9 +621,9 @@ body.sidebar-open .sidebar-backdrop {
   left: 0;
 }
 .topbar-inner {
-  max-width: 1220px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 32px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -1271,8 +1271,22 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
 }
 .card h3{ font-family:'Kalam',cursive; font-size:19px; margin:0 0 10px; color:var(--ink); display:flex; align-items:center; gap:8px;}
 
-.grid-2{ display:grid; grid-template-columns: 1.5fr 1fr; gap:18px; align-items:start; }
-@media (max-width:880px){ .grid-2{grid-template-columns:1fr;} }
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+@media (max-width: 960px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+.quiz-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
 
 /* ---------- Section Header Wrap ---------- */
 .section-header-wrap {
@@ -1302,6 +1316,25 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
   border-radius: var(--radius);
   box-shadow: 0 4px 14px rgba(31, 42, 68, 0.06);
   padding: 22px 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.quiz-main-card .empty {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  text-align: left;
+}
+
+.quiz-settings-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .quiz-hero-banner {
@@ -1601,36 +1634,53 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
   color: var(--gold);
 }
 
-/* ---------- Right Column: Focus Meter & Refusals ---------- */
-.focus-meter-panel, .refusals-panel {
+/* ---------- Right Column: Focus Meter & Refusals (Compact to match Quiz Section) ---------- */
+.focus-meter-panel {
   background: var(--card);
   border: 1.5px solid var(--card-border);
   border-radius: var(--radius);
-  box-shadow: 0 3px 0 var(--shadow);
-  padding: 18px 20px;
-  margin-bottom: 18px;
+  box-shadow: 0 3px 10px rgba(31, 42, 68, 0.05);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+.refusals-panel {
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: 0 3px 10px rgba(31, 42, 68, 0.05);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0;
 }
 
 .panel-card-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 5px;
   border-bottom: 1px dashed var(--card-border);
 }
 
 .panel-card-title-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .panel-card-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1649,28 +1699,28 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
 
 .panel-card-title {
   font-family: 'Kalam', cursive;
-  font-size: 19px;
+  font-size: 15.5px;
   margin: 0;
   color: var(--ink);
   line-height: 1.2;
 }
 
 .panel-card-sub {
-  font-size: 11.5px;
+  font-size: 10.5px;
   color: var(--ink-soft);
-  margin: 2px 0 0;
+  margin: 1px 0 0;
 }
 
 .badge-radar {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
+  gap: 5px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 3px 9px;
-  border-radius: 12px;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 10px;
   background: rgba(180, 128, 31, 0.12);
   color: var(--gold);
   border: 1px solid rgba(180, 128, 31, 0.25);
@@ -1679,36 +1729,38 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
 .badge-refusal-tag {
   display: inline-flex;
   align-items: center;
-  font-size: 10.5px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 3px 9px;
-  border-radius: 12px;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 10px;
   background: rgba(181, 56, 44, 0.12);
   color: var(--red-soft);
   border: 1px solid rgba(181, 56, 44, 0.25);
 }
 
 .focus-meter-desc {
-  font-size: 12.5px;
+  font-size: 11px;
   color: var(--ink-soft);
-  margin: 0 0 14px;
-  line-height: 1.45;
+  margin: 0 0 6px;
+  line-height: 1.35;
 }
 
 /* Dynamic Focus Meter Topic Items */
 .focus-meter-body {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  justify-content: space-evenly;
+  gap: 4px;
 }
 
 .focus-meter-row-item {
   background: var(--paper-1);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 6px;
+  padding: 4px 8px;
   transition: all .2s ease;
 }
 .focus-meter-row-item:hover {
@@ -1716,7 +1768,7 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
   border-color: rgba(31, 42, 68, 0.2);
 }
 .focus-meter-row-item.weakest-topic {
-  border-left: 3.5px solid var(--red-soft);
+  border-left: 3px solid var(--red-soft);
   background: linear-gradient(90deg, rgba(181, 56, 44, 0.06) 0%, var(--paper-1) 100%);
 }
 
@@ -1724,19 +1776,19 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 7px;
+  margin-bottom: 3px;
 }
 
 .fm-subject-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .fm-subject-icon-box {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1746,7 +1798,7 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
 
 .fm-subject-label {
   font-family: 'IBM Plex Sans', sans-serif;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--ink);
 }
@@ -1754,16 +1806,16 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
 .fm-meta-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .fm-priority-chip {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 2px 6px;
-  border-radius: 4px;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 3px;
 }
 .fm-priority-chip.chip-weakest {
   background: rgba(181, 56, 44, 0.14);
@@ -1783,33 +1835,33 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
 
 .fm-pct-badge {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 700;
-  min-width: 38px;
+  min-width: 30px;
   text-align: right;
 }
 
 .fm-track {
-  height: 9px;
+  height: 5px;
   background: var(--paper-2);
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
   border: 1px solid var(--card-border);
 }
 .fm-fill {
   height: 100%;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: width .7s cubic-bezier(.4,0,.2,1);
 }
 
 .focus-meter-hint {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 14px;
-  padding-top: 10px;
+  gap: 5px;
+  margin-top: 5px;
+  padding-top: 5px;
   border-top: 1px dashed var(--card-border);
-  font-size: 11.5px;
+  font-size: 10.5px;
   color: var(--ink-soft);
 }
 .focus-meter-hint svg {
@@ -1821,17 +1873,19 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
 .refusals-card-grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 5px;
+  flex: 1;
+  justify-content: space-evenly;
 }
 
 .refusal-box {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 10px 12px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
   background: var(--paper-1);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
+  border-radius: 6px;
   transition: background .15s ease;
 }
 .refusal-box:hover {
@@ -1839,9 +1893,9 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
 }
 
 .refusal-box-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
   background: rgba(181, 56, 44, 0.1);
   color: var(--red-soft);
   border: 1px solid rgba(181, 56, 44, 0.2);
@@ -1849,24 +1903,24 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-top: 1px;
 }
 
 .refusal-box-body {
   flex: 1;
+  min-width: 0;
 }
 
 .refusal-box-title {
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .refusal-box-text {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--ink-soft);
-  line-height: 1.45;
+  line-height: 1.25;
 }
 
 /* ---------- Active Quiz Question Styles ---------- */
@@ -1993,46 +2047,71 @@ table.hist tr:last-child td{ border-bottom:none; }
 .empty{ text-align:center; padding:40px 20px; color:var(--ink-soft); font-size:14px; }
 .empty .big{ font-size:38px; margin-bottom:8px; }
 
-/* Quiz In-page Coach Helper Banner */
+/* Quiz In-page Coach Helper Banner - Full Width & Sleek Compact Height */
 .quiz-coach-helper-banner {
+  width: 100%;
   background: var(--card);
   border: 1.5px dashed var(--gold);
   border-radius: var(--radius);
-  padding: 14px 18px;
-  margin-top: 16px;
+  padding: 9px 18px;
+  margin-top: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  box-shadow: 0 2px 6px rgba(180, 128, 31, 0.08);
-}
-@media (max-width: 680px) {
-  .quiz-coach-helper-banner { flex-direction: column; align-items: stretch; text-align: center; }
+  box-shadow: 0 2px 8px rgba(180, 128, 31, 0.08);
 }
 .helper-content {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
 }
 .helper-badge {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--gold);
-  letter-spacing: .04em;
+  letter-spacing: .03em;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
 .helper-text {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink-soft);
-  line-height: 1.4;
+  line-height: 1.35;
+  margin: 0;
 }
 .helper-ask-btn {
+  padding: 6px 14px !important;
+  font-size: 12px !important;
   white-space: nowrap;
   border-color: var(--gold) !important;
   color: var(--gold) !important;
+  flex-shrink: 0;
 }
 .helper-ask-btn:hover {
   background: var(--gold) !important;
   color: #fff !important;
+}
+@media (max-width: 860px) {
+  .helper-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}
+@media (max-width: 640px) {
+  .quiz-coach-helper-banner {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 10px;
+  }
+  .helper-content {
+    align-items: center;
+  }
 }
 
 /* ================= FLOATING AI COACH WIDGET ================= */
@@ -2242,8 +2321,8 @@ table.hist tr:last-child td{ border-bottom:none; }
 .app-footer {
   background: var(--paper);
   border-top: 2px solid var(--card-border);
-  margin-top: 40px;
-  padding: 44px 0 24px;
+  margin-top: 24px;
+  padding: 36px 0 24px;
   color: var(--ink);
   position: relative;
   z-index: 2;
@@ -2252,9 +2331,9 @@ table.hist tr:last-child td{ border-bottom:none; }
   background: #131722;
 }
 .footer-container {
-  max-width: 1220px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 32px;
 }
 .footer-grid {
   display: grid;

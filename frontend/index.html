@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SmartPrep AI - Adaptive Exam Coach</title>
-<link rel="stylesheet" href="styles.css?v=1.9">
+<link rel="stylesheet" href="styles.css?v=2.1">
 <link rel="icon" href="assets/AEC logo.png">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -528,8 +528,7 @@
     </div>
 
     <div class="grid-2">
-      <div>
-        <div class="card quiz-main-card" id="quizCard">
+      <div class="card quiz-main-card" id="quizCard">
           <div class="empty" id="quizEmpty">
             <!-- Scholarly Hero Banner -->
             <div class="quiz-hero-banner">
@@ -715,112 +714,109 @@
           <div id="quizResult" style="display:none;"></div>
         </div>
 
-        <div class="quiz-coach-helper-banner">
-          <div class="helper-content">
-            <span class="helper-badge">💡 Socratic AI Guidance</span>
-            <span class="helper-text">Stuck on a tricky concept? The AI Coach provides conceptual guidance and diagrams without spoiling test answers.</span>
-          </div>
-          <button type="button" class="btn secondary helper-ask-btn" onclick="toggleCoachDrawer()">
-            🎓 Ask Socratic Coach
-          </button>
-        </div>
-      </div>
-
-      <div>
-        <!-- Focus Meter Card -->
-        <div class="card focus-meter-panel">
-          <div class="panel-card-header">
-            <div class="panel-card-title-group">
-              <div class="panel-card-icon icon-gold">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <circle cx="12" cy="12" r="6"></circle>
-                  <circle cx="12" cy="12" r="2"></circle>
-                </svg>
+        <!-- Right Column: Focus Meter & Mandatory Refusals stacked, compact to match Quiz Section -->
+        <div class="quiz-side-column">
+          <!-- Focus Meter Card -->
+          <div class="card focus-meter-panel">
+            <div class="panel-card-header">
+              <div class="panel-card-title-group">
+                <div class="panel-card-icon icon-gold">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="6" r="6"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="panel-card-title">Focus Meter</h3>
+                  <p class="panel-card-sub">Real-time adaptive weight per topic</p>
+                </div>
               </div>
-              <div>
-                <h3 class="panel-card-title">Focus Meter</h3>
-                <p class="panel-card-sub">Real-time adaptive weight per topic</p>
-              </div>
-            </div>
-            <span class="badge badge-radar">
-              <span class="radar-dot"></span> Live Weighting
-            </span>
-          </div>
-
-          <p class="focus-meter-desc">
-            Calculates how much the coach currently leans into each subject. High percentages indicate weak areas prioritized for upcoming questions.
-          </p>
-
-          <div id="focusMeter" class="focus-meter-body"></div>
-
-          <div class="focus-meter-hint">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            <span>Accuracy shifts weighting: Answer correctly to master topics.</span>
-          </div>
-        </div>
-
-        <!-- Mandatory Refusals Card -->
-        <div class="card refusals-panel">
-          <div class="panel-card-header">
-            <div class="panel-card-title-group">
-              <div class="panel-card-icon icon-red">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                  <path d="M9 12l2 2 4-4"></path>
-                </svg>
-              </div>
-              <div>
-                <h3 class="panel-card-title">Mandatory Refusals</h3>
-                <p class="panel-card-sub">Academic Integrity & Ethical Standards</p>
-              </div>
-            </div>
-            <span class="badge badge-refusal-tag">Ethical AI</span>
-          </div>
-
-          <div class="refusals-card-grid">
-            <div class="refusal-box">
-              <div class="refusal-box-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-              </div>
-              <div class="refusal-box-body">
-                <div class="refusal-box-title">Zero Active Quiz Spoilers</div>
-                <div class="refusal-box-text">Direct test answers and solutions are strictly refused during quizzes to ensure authentic problem solving.</div>
-              </div>
+              <span class="badge badge-radar">
+                <span class="radar-dot"></span> Live Weighting
+              </span>
             </div>
 
-            <div class="refusal-box">
-              <div class="refusal-box-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="15" y1="9" x2="9" y2="15"></line>
-                  <line x1="9" y1="9" x2="15" y2="15"></line>
-                </svg>
+            <div id="focusMeter" class="focus-meter-body"></div>
+
+            <div class="focus-meter-hint">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              <span>Accuracy shifts weighting: Answer correctly to master topics.</span>
+            </div>
+          </div>
+
+          <!-- Mandatory Refusals Card -->
+          <div class="card refusals-panel">
+            <div class="panel-card-header">
+              <div class="panel-card-title-group">
+                <div class="panel-card-icon icon-red">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="M9 12l2 2 4-4"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="panel-card-title">Mandatory Refusals</h3>
+                  <p class="panel-card-sub">Academic Integrity &amp; Ethical Standards</p>
+                </div>
               </div>
-              <div class="refusal-box-body">
-                <div class="refusal-box-title">No Exam Leaks or Predictions</div>
-                <div class="refusal-box-text">The coach rejects any prompts asking to predict exact leaked questions or confidential exam papers.</div>
-              </div>
+              <span class="badge badge-refusal-tag">Ethical AI</span>
             </div>
 
-            <div class="refusal-box">
-              <div class="refusal-box-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-                </svg>
+            <div class="refusals-card-grid">
+              <div class="refusal-box">
+                <div class="refusal-box-icon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </div>
+                <div class="refusal-box-body">
+                  <div class="refusal-box-title">Zero Active Quiz Spoilers</div>
+                  <div class="refusal-box-text">Direct test answers and solutions are strictly refused during quizzes to ensure authentic problem solving.</div>
+                </div>
               </div>
-              <div class="refusal-box-body">
-                <div class="refusal-box-title">No Score Guarantees</div>
-                <div class="refusal-box-text">Promotes deliberate concept mastery and intellectual growth instead of deceptive shortcut promises.</div>
+
+              <div class="refusal-box">
+                <div class="refusal-box-icon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                  </svg>
+                </div>
+                <div class="refusal-box-body">
+                  <div class="refusal-box-title">No Exam Leaks or Predictions</div>
+                  <div class="refusal-box-text">The coach rejects any prompts asking to predict exact leaked questions or confidential exam papers.</div>
+                </div>
+              </div>
+
+              <div class="refusal-box">
+                <div class="refusal-box-icon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                  </svg>
+                </div>
+                <div class="refusal-box-body">
+                  <div class="refusal-box-title">No Score Guarantees</div>
+                  <div class="refusal-box-text">Promotes deliberate concept mastery and intellectual growth instead of deceptive shortcut promises.</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- Socratic AI Guidance: Full width across screen with reduced height -->
+      <div class="quiz-coach-helper-banner">
+        <div class="helper-content">
+          <span class="helper-badge">💡 Socratic AI Guidance</span>
+          <span class="helper-text">Stuck on a tricky concept? The AI Coach provides conceptual guidance and diagrams without spoiling test answers.</span>
+        </div>
+        <button type="button" class="btn secondary helper-ask-btn" onclick="toggleCoachDrawer()">
+          🎓 Ask Socratic Coach
+        </button>
+      </div>
   </section>
 
   <!-- ================= DASHBOARD PANEL ================= -->
