@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SmartPrep AI - Adaptive Exam Coach</title>
-<link rel="stylesheet" href="styles.css?v=2.7">
+<link rel="stylesheet" href="styles.css?v=3.0">
 <link rel="icon" href="assets/AEC logo.png">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -471,47 +471,385 @@
         <button data-tab="arena" class="tab-btn tab-arena"><span class="tab-num">6</span>Multiplayer Arena</button>
       </nav>
 
-  <!-- ================= MULTIPLAYER ARENA ================= -->
+  <!-- ================= MULTIPLAYER ARENA 2.0 ================= -->
   <section class="panel" id="panel-arena">
-    <h2 class="section-title">⚔️ Live Multiplayer Arena</h2>
-    <p class="section-sub">Challenge a friend to a 5-question battle! The server generates fresh questions on the spot.</p>
-    <div class="card" id="arenaSetup">
-      <div style="display:flex; gap:20px; align-items:center;">
-        <button class="btn" id="arenaCreateBtn" style="padding:12px 20px;">+ Create New Room</button>
-        <span style="font-weight:bold; color:var(--ink-soft);">OR</span>
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="arenaRoomCode" placeholder="Enter 4-digit Code" maxlength="4" style="padding:10px; border-radius:8px; border:1.5px solid var(--card-border); font-family:'IBM Plex Mono',monospace; width:150px; text-align:center;">
-          <button class="btn secondary" id="arenaJoinBtn">Join Room</button>
+    <!-- Header -->
+    <div class="section-header-wrap">
+      <div class="section-tag-pill">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>Synchronized Real-Time Academic Battles</span>
+      </div>
+      <h2 class="section-title">⚔️ Multiplayer Arena</h2>
+      <p class="section-sub">Challenge friends or join public battle lobbies. Real-time multi-player trivia with custom subjects, live race tracks, and podium leaderboards!</p>
+    </div>
+
+    <!-- Scholar Tag Identity Bar -->
+    <div class="arena-player-card">
+      <div class="arena-player-profile">
+        <div class="arena-player-avatar" id="arenaUserAvatar">🎓</div>
+        <div class="arena-player-info">
+          <div class="arena-player-name-row">
+            <span class="arena-player-name" id="arenaUserName">Scholar</span>
+            <span class="arena-player-tag" id="arenaUserTag" title="Your permanent player ID">#SP-4921</span>
+            <button type="button" class="btn-copy-tag" id="copyPlayerTagBtn" title="Copy Player ID">📋 Copy</button>
+          </div>
+          <div class="arena-player-sub">Academic Contender · Ready for Battle</div>
         </div>
       </div>
-      <p id="arenaStatus" style="margin-top:15px; color:var(--red-soft); font-weight:bold; display:none;"></p>
+      <div class="arena-stat-badge">
+        <span class="arena-badge-dot"></span>
+        <span>Online &amp; Connected</span>
+      </div>
     </div>
-    
-    <div class="card" id="arenaGame" style="display:none;">
-      <h3 style="text-align:center; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; color:var(--gold);">ROOM <span id="arenaCurrentRoom">----</span></h3>
-      
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
-        <div style="background:var(--paper-2); padding:15px; border-radius:8px; text-align:center; border:2px solid var(--ink);">
-          <div style="font-size:12px; font-weight:bold; color:var(--ink-soft); text-transform:uppercase;">You</div>
-          <div style="font-size:28px; font-weight:bold; margin:10px 0; font-family:'IBM Plex Mono', monospace;" id="arenaMyScore">0</div>
-          <div style="height:6px; background:var(--card-border); border-radius:3px; overflow:hidden;"><div id="arenaMyProgress" style="height:100%; width:0%; background:var(--green); transition:width 0.3s;"></div></div>
+
+    <!-- Main Lobby View (Selection Tabs + Content) -->
+    <div id="arenaMainLobby">
+      <!-- Arena Navigation Tabs (Lobbies / Create / Passcode) -->
+      <div class="arena-tabs-bar" id="arenaLobbyTabs">
+        <button type="button" class="arena-tab-btn active" data-arena-tab="public">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <span>🌐 Public Lobbies</span>
+        </button>
+        <button type="button" class="arena-tab-btn" data-arena-tab="create">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>➕ Create Arena</span>
+        </button>
+        <button type="button" class="arena-tab-btn" data-arena-tab="private">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span>🔑 Join Private Passcode</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Public Battle Lobbies -->
+      <div class="card arena-tab-content active" id="arenaTabPublic">
+        <div class="arena-lobbies-header">
+          <div>
+            <h3 class="arena-lobbies-title">Active Public Battles</h3>
+            <p class="arena-lobbies-sub">Browse live open lobbies and jump straight into the arena with fellow students.</p>
+          </div>
+          <button type="button" class="btn secondary" id="refreshPublicRoomsBtn">
+            🔄 Refresh Lobbies
+          </button>
         </div>
-        <div style="background:var(--paper-2); padding:15px; border-radius:8px; text-align:center; border:2px solid var(--card-border);">
-          <div style="font-size:12px; font-weight:bold; color:var(--ink-soft); text-transform:uppercase;">Opponent</div>
-          <div style="font-size:28px; font-weight:bold; margin:10px 0; font-family:'IBM Plex Mono', monospace;" id="arenaOppScore">0</div>
-          <div style="height:6px; background:var(--card-border); border-radius:3px; overflow:hidden;"><div id="arenaOppProgress" style="height:100%; width:0%; background:var(--red-soft); transition:width 0.3s;"></div></div>
+
+        <!-- Search & Filter Bar -->
+        <div class="arena-filter-bar">
+          <div class="arena-search-wrap">
+            <span class="arena-search-icon">🔍</span>
+            <input type="text" id="arenaLobbySearch" placeholder="Search by subject, topic, host, or #code..." class="arena-search-input">
+            <button type="button" id="arenaClearSearchBtn" class="arena-search-clear" style="display:none;" title="Clear Search">&times;</button>
+          </div>
+          <div class="arena-filter-chips">
+            <div class="arena-filter-select-wrap">
+              <label for="arenaFilterSubject" class="arena-filter-label">📚 Subject</label>
+              <select id="arenaFilterSubject" class="arena-filter-select">
+                <option value="All">All Subjects</option>
+              </select>
+            </div>
+            <div class="arena-filter-select-wrap">
+              <label for="arenaFilterFormat" class="arena-filter-label">📋 Format</label>
+              <select id="arenaFilterFormat" class="arena-filter-select">
+                <option value="All">All Formats</option>
+                <option value="mix">Mix Formats</option>
+                <option value="mcq">MCQ Only</option>
+                <option value="tf">True / False</option>
+                <option value="sata">SATA</option>
+                <option value="short">Short Answer</option>
+              </select>
+            </div>
+            <div class="arena-filter-select-wrap">
+              <label for="arenaFilterAvailability" class="arena-filter-label">👥 Availability</label>
+              <select id="arenaFilterAvailability" class="arena-filter-select">
+                <option value="all">All Lobbies</option>
+                <option value="open" selected>Open Slots Only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Filter Summary & Reset -->
+        <div id="arenaFilterSummary" class="arena-filter-summary" style="display:none;"></div>
+
+        <div class="arena-lobbies-list" id="publicLobbiesList">
+          <div class="arena-empty-state">
+            <div class="arena-empty-icon">⏳</div>
+            <div class="arena-empty-title">Scanning for Battle Lobbies...</div>
+            <p class="arena-empty-desc">No public rooms found right now. Create one and host the first challenge!</p>
+            <button type="button" class="btn secondary" id="emptyCreateBtn">
+              ➕ Create Arena
+            </button>
+          </div>
         </div>
       </div>
 
-      <div id="arenaQuiz" style="display:none;">
-        <div id="aqProgress" class="q-progress">Question 1 / 5</div>
-        <div id="aqText" class="q-text" style="font-size:18px;"></div>
-        <div id="aqOptions" class="options"></div>
-        <div id="aqExplain" class="explain-box"></div>
+      <!-- Tab 2: Create Custom Arena -->
+      <div class="card arena-tab-content" id="arenaTabCreate" style="display:none;">
+        <h3 class="arena-lobbies-title">Configure Battle Arena</h3>
+        <p class="arena-lobbies-sub">Choose your subject, formats, time limits, and choose whether anyone can join or private invite-only.</p>
+
+        <form id="createArenaForm" onsubmit="return false;" class="arena-create-grid">
+          <!-- Visibility Switcher -->
+          <div class="arena-field-full">
+            <label class="quiz-field-label">
+              <span class="quiz-label-icon">🌐</span>
+              <span>Room Visibility</span>
+            </label>
+            <div class="arena-visibility-picker">
+              <label class="visibility-option active" id="visOptionPublic">
+                <input type="radio" name="arenaVisibility" value="public" checked style="display:none;">
+                <div class="vis-card">
+                  <div class="vis-icon">🌐</div>
+                  <div class="vis-text">
+                    <div class="vis-title">Public Arena</div>
+                    <div class="vis-sub">Listed in public lobbies. Anyone can join freely.</div>
+                  </div>
+                </div>
+              </label>
+              <label class="visibility-option" id="visOptionPrivate">
+                <input type="radio" name="arenaVisibility" value="private" style="display:none;">
+                <div class="vis-card">
+                  <div class="vis-icon">🔒</div>
+                  <div class="vis-text">
+                    <div class="vis-title">Private Arena (Passcode)</div>
+                    <div class="vis-sub">Hidden from browser. Only friends with your secret passcode can enter.</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Subject Selection (Dynamically Aligned with Syllabus) -->
+          <div class="quiz-field-group">
+            <label class="quiz-field-label" for="arenaSubjectSelect">
+              <span class="quiz-label-icon">📚</span>
+              <span>Subject</span>
+              <span id="arenaSyllabusTag" class="arena-syllabus-badge" style="display:none;"></span>
+            </label>
+            <div class="custom-select-wrap">
+              <select id="arenaSubjectSelect" class="quiz-custom-select">
+                <option value="All">All Subjects (Mixed)</option>
+              </select>
+              <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+            </div>
+          </div>
+
+          <!-- Subtopic Selection -->
+          <div class="quiz-field-group">
+            <label class="quiz-field-label" for="arenaTopicSelect">
+              <span class="quiz-label-icon">🎯</span>
+              <span>Subtopic Focus</span>
+            </label>
+            <div class="custom-select-wrap">
+              <select id="arenaTopicSelect" class="quiz-custom-select">
+                <option value="All">All Subtopics</option>
+              </select>
+              <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+            </div>
+          </div>
+
+          <!-- Question Format Selection -->
+          <div class="quiz-field-group">
+            <label class="quiz-field-label" for="arenaFormatSelect">
+              <span class="quiz-label-icon">📋</span>
+              <span>Question Format</span>
+            </label>
+            <div class="custom-select-wrap">
+              <select id="arenaFormatSelect" class="quiz-custom-select">
+                <option value="mix">Mix (All Formats)</option>
+                <option value="mcq">Multiple Choice (MCQ)</option>
+                <option value="tf">True / False</option>
+                <option value="sata">Select All That Apply (SATA)</option>
+                <option value="short">Short Answer (Freeform)</option>
+              </select>
+              <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+            </div>
+          </div>
+
+          <!-- Question Count -->
+          <div class="quiz-field-group">
+            <label class="quiz-field-label" for="arenaCountSelect">
+              <span class="quiz-label-icon">🔢</span>
+              <span>Question Count</span>
+            </label>
+            <div class="custom-select-wrap">
+              <select id="arenaCountSelect" class="quiz-custom-select">
+                <option value="5" selected>5 Questions (Speed Duel)</option>
+                <option value="10">10 Questions (Standard Clash)</option>
+                <option value="15">15 Questions (Grand Battle)</option>
+              </select>
+              <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+            </div>
+          </div>
+
+          <!-- Battle Time Limit -->
+          <div class="quiz-field-group">
+            <label class="quiz-field-label" for="arenaTimerSelect">
+              <span class="quiz-label-icon">⏱️</span>
+              <span>Battle Time Limit</span>
+            </label>
+            <div class="custom-select-wrap">
+              <select id="arenaTimerSelect" class="quiz-custom-select">
+                <option value="0">⏳ Relaxed (No Timer)</option>
+                <option value="60">⚡ 1 Minute (Rapid Fire)</option>
+                <option value="180" selected>⏱️ 3 Minutes (Standard Match)</option>
+                <option value="300">⏰ 5 Minutes (Extended Test)</option>
+              </select>
+              <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+            </div>
+          </div>
+
+          <!-- Max Players -->
+          <div class="quiz-field-group">
+            <label class="quiz-field-label" for="arenaMaxPlayersSelect">
+              <span class="quiz-label-icon">👥</span>
+              <span>Max Players</span>
+            </label>
+            <div class="custom-select-wrap">
+              <select id="arenaMaxPlayersSelect" class="quiz-custom-select">
+                <option value="2">2 Players (1v1 Duel)</option>
+                <option value="4" selected>4 Players (Squad Match)</option>
+                <option value="6">6 Players (Group Battle)</option>
+                <option value="8">8 Players (Free-For-All Tournament)</option>
+              </select>
+              <span class="select-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+            </div>
+          </div>
+
+          <div class="arena-create-actions">
+            <button type="button" class="btn" id="arenaLaunchBtn">
+              ⚔️ Launch Arena Lobby
+            </button>
+          </div>
+        </form>
       </div>
-      
-      <div id="arenaWaiting" style="text-align:center; padding:30px; font-weight:bold; color:var(--ink-soft);">
-        ⏳ Waiting for opponent to join...
+
+      <!-- Tab 3: Join Private Passcode -->
+      <div class="card arena-tab-content" id="arenaTabPrivate" style="display:none;">
+        <h3 class="arena-lobbies-title">Join Private Battle</h3>
+        <p class="arena-lobbies-sub">Enter the 4-digit Room Code and the 6-digit Secret Passcode shared by your friend.</p>
+        
+        <div class="arena-passcode-form">
+          <div class="arena-code-input-row">
+            <div class="passcode-input-box">
+              <label class="quiz-field-label">Room Code (4 Digits)</label>
+              <input type="text" id="privateRoomCode" placeholder="e.g. 4821" maxlength="6" class="arena-big-input">
+            </div>
+            <div class="passcode-input-box">
+              <label class="quiz-field-label">Secret Passcode PIN (6 Digits)</label>
+              <input type="password" id="privateRoomPasscode" placeholder="6-digit PIN" maxlength="6" class="arena-big-input">
+            </div>
+          </div>
+          <button type="button" class="btn" id="arenaJoinPrivateBtn">
+            🔑 Unlock &amp; Join Battle
+          </button>
+          <div id="arenaPrivateError" class="arena-error-box" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Room Container (Waiting Room, In-Battle, Results) -->
+    <div class="card" id="arenaRoomActive" style="display:none;">
+      <!-- Sub-view A: Waiting Room Lobby -->
+      <div id="arenaWaitingRoom" style="display:none;">
+        <div class="arena-room-header">
+          <div class="arena-room-badges">
+            <span class="arena-code-pill" id="arRoomCode">ROOM ----</span>
+            <span class="arena-visibility-pill" id="arVisBadge">🌐 Public</span>
+            <span class="arena-passcode-pill" id="arPasscodeBox" style="display:none;">
+              Passcode: <b id="arPasscodeVal">------</b>
+              <button type="button" class="copy-passcode-btn" id="copyPasscodeBtn" title="Copy Passcode">📋</button>
+            </span>
+          </div>
+          <button type="button" class="btn secondary arena-leave-btn" id="arenaLeaveRoomBtn">
+            🚪 Leave Room
+          </button>
+        </div>
+
+        <!-- Room Specs Chips -->
+        <div class="arena-specs-row" id="arenaSpecsRow"></div>
+
+        <!-- Player Roster Grid -->
+        <h4 class="arena-roster-title">Combatants in Lobby (<span id="arenaRosterCount">1</span>/<span id="arenaRosterMax">4</span>)</h4>
+        <div class="arena-roster-grid" id="arenaRosterGrid"></div>
+
+        <!-- Host or Player Status & Actions -->
+        <div class="arena-waiting-footer">
+          <div id="arenaStatusMsg" class="arena-status-msg">
+            ⏳ Waiting for contenders to join and ready up...
+          </div>
+          <div class="arena-lobby-actions">
+            <button type="button" class="btn secondary" id="arenaReadyToggleBtn" style="display:none;">
+              Ready Up ✨
+            </button>
+            <button type="button" class="btn" id="arenaStartBattleBtn" style="display:none;">
+              🚀 Start Battle Now
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-view B: Live Battle Arena -->
+      <div id="arenaBattleView" style="display:none;">
+        <!-- Battle Top Header & Race Track -->
+        <div class="arena-battle-header">
+          <div class="arena-timer-pill" id="arenaTimerBox">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span id="arenaTimeRemaining">03:00</span>
+          </div>
+          <div class="arena-q-counter" id="arenaQCounter">Question 1 / 5</div>
+        </div>
+
+        <!-- Real-Time Multi-Player Race Track -->
+        <div class="arena-scoreboard-track" id="arenaScoreboardTrack"></div>
+
+        <!-- Active Question Container -->
+        <div class="arena-quiz-card" id="arenaQuestionCard">
+          <div class="arena-q-topic-badge" id="arenaQTopicBadge">Topic</div>
+          <div class="arena-q-text" id="arenaQText">Loading question...</div>
+          <div class="arena-q-options" id="arenaQOptions"></div>
+          <div class="arena-q-feedback" id="arenaQFeedback" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Sub-view C: Battle Results & Podium Leaderboard -->
+      <div id="arenaResultsView" style="display:none;">
+        <div class="arena-results-hero">
+          <div class="arena-trophy-icon">🏆</div>
+          <h3 class="arena-results-title">Battle Concluded!</h3>
+          <p class="arena-results-sub">The battle scores have been calculated. Here is the academic leaderboard!</p>
+        </div>
+
+        <!-- 3-Place Podium (1st, 2nd, 3rd) -->
+        <div class="arena-podium-container" id="arenaPodium"></div>
+
+        <!-- Full Ranked Leaderboard Table -->
+        <div class="arena-leaderboard-card">
+          <h4 class="leaderboard-heading">🏅 Final Battle Standings</h4>
+          <div class="arena-table-wrap">
+            <table class="arena-leaderboard-table" id="arenaLeaderboardTable">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Player Tag</th>
+                  <th>Score</th>
+                  <th>Accuracy</th>
+                  <th>Time</th>
+                  <th>XP Awarded</th>
+                </tr>
+              </thead>
+              <tbody id="arenaLeaderboardBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="arena-results-actions">
+          <button type="button" class="btn secondary" id="arenaReturnLobbyBtn">
+            🏠 Return to Arena Lobby
+          </button>
+          <button type="button" class="btn" id="arenaRematchBtn" style="display:none;">
+            🔄 Rematch in Same Room
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -1183,7 +1521,7 @@
   <span class="coach-pulse-dot"></span>
 </button>
 
-<script src="script.js?v=2.7"></script>
+<script src="script.js?v=3.1"></script>
 
 </body>
 </html>

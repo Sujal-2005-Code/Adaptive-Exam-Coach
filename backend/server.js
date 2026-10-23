@@ -1,4 +1,12 @@
 require('dotenv').config();
+const dns = require('dns');
+try {
+    // Resolve MongoDB SRV lookups reliably across Windows network adapters
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+    console.warn('DNS setServers warning:', e.message);
+}
+
 const express = require('express');
 const cors = require('cors');
 const Groq = require('groq-sdk');
@@ -23,7 +31,9 @@ const upload = multer({
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
 
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/aec-vap')
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/aec-vap', {
+    serverSelectionTimeoutMS: 10000
+})
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('MongoDB connection error:', err));
 
@@ -55,7 +65,7 @@ app.use(express.static(path.join(__dirname, '../frontend'), { index: 'landing.ht
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const MODEL = 'openai/gpt-oss-120b'; // fast and supports JSON schema perfectly
 
-// Helper to fix unescaped backslashes in JSON (e.g. for LaTeX \( \))
+// Helper to fix unescaped backslashes, comments, trailing commas, and control chars in JSON
 function safeJSONParse(str) {
     if (!str || typeof str !== 'string') return null;
     str = str.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
@@ -66,14 +76,33 @@ function safeJSONParse(str) {
     }
     
     str = str.trim();
+
+    const cleanJSON = (raw) => {
+        if (!raw) return '';
+        return raw
+            // Remove single-line JS comments
+            .replace(/\/\/.*$/gm, '')
+            // Remove trailing commas before } or ]
+            .replace(/,\s*([}\]])/g, '$1')
+            // Fix unescaped backslashes (excluding standard escape chars " \ / b f n r t u)
+            .replace(/(?<!\\)\\(?=[^"\\/bfnrtu])/g, '\\\\');
+    };
     
     const tryParse = (jsonStr) => {
+        if (!jsonStr) return null;
         try { return JSON.parse(jsonStr); } 
         catch (e) { 
-            try { return JSON.parse(jsonStr.replace(/(?<!\\)\\(?=[^"\\/bfnrtu])/g, '\\\\')); }
+            try { return JSON.parse(cleanJSON(jsonStr)); }
             catch (e2) {
-                try { return JSON.parse(jsonStr.replace(/\n/g, '\\n').replace(/\r/g, '').replace(/\t/g, '\\t').replace(/(?<!\\)\\(?=[^"\\/bfnrtu])/g, '\\\\')); }
-                catch (e3) { return null; }
+                try {
+                    // Fix unescaped newlines/tabs inside string literals
+                    const sanitized = cleanJSON(jsonStr).replace(/[\u0000-\u001F]+/g, (match) => {
+                        if (match.includes('\n')) return '\\n';
+                        if (match.includes('\t')) return '\\t';
+                        return ' ';
+                    });
+                    return JSON.parse(sanitized);
+                } catch (e3) { return null; }
             }
         }
     };
@@ -101,13 +130,27 @@ function safeJSONParse(str) {
         if (res !== null) return res;
     }
 
-    console.error("safeJSONParse failed completely");
+    console.warn("safeJSONParse: unable to parse JSON payload. Preview:", str.substring(0, 150).replace(/\s+/g, ' '));
     return null;
+}
+
+// Normalize alternative field names from various LLMs (e.g. question -> q, answer -> a)
+function normalizeQuestionFields(q) {
+    if (!q || typeof q !== 'object') return q;
+    if (!q.q && q.question) q.q = q.question;
+    if (!q.a && q.answer) q.a = q.answer;
+    if (!q.o && q.options) q.o = q.options;
+    if (!q.h && q.hint) q.h = q.hint;
+    if (!q.e && q.explanation) q.e = q.explanation;
+    if (!q.subtopic && q.sub) q.subtopic = q.sub;
+    if (!q.topic && q.subject) q.topic = q.subject;
+    return q;
 }
 
 // Helper to ensure question objects match Mongoose Schema types
 function sanitizeQuestionForDB(q) {
     if (!q) return q;
+    normalizeQuestionFields(q);
     if (Array.isArray(q.q)) q.q = q.q.join('\n');
     if (Array.isArray(q.h)) q.h = q.h.join('\n');
     if (Array.isArray(q.e)) q.e = q.e.join('\n');
@@ -154,6 +197,9 @@ const optionalAuth = (req, res, next) => {
 
 // Auth Routes
 app.post('/api/register', async (req, res) => {
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({ error: 'Database is still establishing connection. Please try again in 5 seconds.' });
+    }
     try {
         const { username, email, password, grade, targetExam } = req.body;
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -165,11 +211,14 @@ app.post('/api/register', async (req, res) => {
         const token = jwt.sign({ userId: user._id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
         res.json({ token, username: user.username, xp: user.xp, streak: user.streak, badges: user.badges, customSyllabusName: user.customSyllabusName, customSyllabusData: user.customSyllabusData });
     } catch (error) {
-        res.status(500).json({ error: "Login failed" });
+        res.status(500).json({ error: "Registration failed: " + error.message });
     }
 });
 
 app.post('/api/login', async (req, res) => {
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({ error: 'Database is still establishing connection. Please try again in 5 seconds.' });
+    }
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
@@ -326,7 +375,7 @@ app.post('/api/quiz/single', optionalAuth, async (req, res) => {
             formatInstructions = `
   "type": "mcq",
   "q": "String (the question text)",
-  "o": ["String", "String", "String", "String"] (exactly 4 options),
+  "o": ["Option A", "Option B", "Option C", "Option D"],
   "a": "String (the exact text of the correct option from the 'o' array)",`;
         } else if (qType === 'tf') {
             formatInstructions = `
@@ -338,8 +387,8 @@ app.post('/api/quiz/single', optionalAuth, async (req, res) => {
             formatInstructions = `
   "type": "sata",
   "q": "String (the question text)",
-  "o": ["String", "String", "String", "String"],
-  "a": ["String", "String"],`;
+  "o": ["Option A", "Option B", "Option C", "Option D"],
+  "a": ["Option A", "Option C"],`;
         } else if (qType === 'short') {
             formatInstructions = `
   "type": "short",
@@ -350,8 +399,8 @@ app.post('/api/quiz/single', optionalAuth, async (req, res) => {
             formatInstructions = `
   "type": "mcq",
   "q": "String (the question text)",
-  "o": ["String", "String", "String", "String"] (exactly 4 options),
-  "a": "String (the exact text of the correct option. MUST be a string, NOT an array)",`;
+  "o": ["Option A", "Option B", "Option C", "Option D"],
+  "a": "String (the exact text of the correct option)",`;
         }
 
         let syllabusInstruction = '';
@@ -383,14 +432,21 @@ The object strictly must have this structure:
                     messages: [{ role: 'user', content: prompt }],
                     model: MODEL,
                     temperature: 0.7,
-                    max_tokens: 1024
+                    max_tokens: 3072
                 });
 
                 const content = chatCompletion.choices[0]?.message?.content || "{}";
-                q = safeJSONParse(content);
+                let parsed = safeJSONParse(content);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    parsed = parsed[0];
+                }
+                if (parsed && typeof parsed === 'object') {
+                    normalizeQuestionFields(parsed);
+                }
+                q = parsed;
                 if (!q || !q.q || !q.a) {
                     q = null;
-                    throw new Error("Missing required fields");
+                    throw new Error("Missing required fields (q or a)");
                 }
                 
                 // Save to DB
@@ -399,7 +455,7 @@ The object strictly must have this structure:
                 await newQ.save().catch(err => console.error("Failed to save to DB:", err));
                 
             } catch (e) {
-                console.error(`Attempt ${attempts} failed for single quiz:`, e.message);
+                console.warn(`Attempt ${attempts} note for single quiz:`, e.message);
             }
         }
         
@@ -446,8 +502,8 @@ Each object strictly must have this structure:
   "type": "mcq",
   "d": "String (easy, medium, or hard)",
   "q": "String (the question text)",
-  "o": ["String", "String", "String", "String"] (exactly 4 options),
-  "a": "String (the exact text of the correct option. MUST be a string, NOT an array)",
+  "o": ["Option A", "Option B", "Option C", "Option D"],
+  "a": "String (the exact text of the correct option)",
   "e": "String (a brief explanation of the correct answer)"
 }`;
 
@@ -461,11 +517,18 @@ Each object strictly must have this structure:
                     messages: [{ role: 'user', content: prompt }],
                     model: MODEL,
                     temperature: 0.7,
-                    max_tokens: 2048
+                    max_tokens: 4096
                 });
 
                 const content = chatCompletion.choices[0]?.message?.content || "[]";
-                questions = safeJSONParse(content);
+                let parsed = safeJSONParse(content);
+                if (!Array.isArray(parsed) && parsed && typeof parsed === 'object') {
+                    if (Array.isArray(parsed.questions)) parsed = parsed.questions;
+                    else if (Array.isArray(parsed.quiz)) parsed = parsed.quiz;
+                    else if (Array.isArray(parsed.items)) parsed = parsed.items;
+                    else if (parsed.q || parsed.question) parsed = [parsed];
+                }
+                questions = parsed;
                 
                 if (!Array.isArray(questions) || questions.length === 0) {
                     questions = null;
@@ -474,6 +537,7 @@ Each object strictly must have this structure:
                 
                 // Save valid questions to DB
                 for (const q of questions) {
+                    normalizeQuestionFields(q);
                     if (q.q && q.a) {
                         if(!q.type) q.type = 'mcq';
                         sanitizeQuestionForDB(q);
@@ -483,7 +547,7 @@ Each object strictly must have this structure:
                 }
                 
             } catch (e) {
-                console.error(`Attempt ${attempts} failed for batch quiz:`, e.message);
+                console.warn(`Attempt ${attempts} note for batch quiz:`, e.message);
             }
         }
         
@@ -641,155 +705,499 @@ server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
-// ================= MULTIPLAYER ARENA LOGIC =================
+// ================= MULTIPLAYER ARENA 2.0 LOGIC =================
 
 const rooms = {};
 
-io.on('connection', (socket) => {
-    console.log('User connected to Arena:', socket.id);
-
-    socket.on('create-room', () => {
-        const roomId = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit code
-        rooms[roomId] = {
-            id: roomId,
-            players: [{ id: socket.id, score: 0, progress: 0 }],
-            state: 'waiting',
-            questions: []
-        };
-        socket.join(roomId);
-        socket.emit('room-created', roomId);
-    });
-
-    socket.on('join-room', async (roomId) => {
-        const room = rooms[roomId];
-        if (!room) {
-            socket.emit('room-error', 'Room not found.');
-            return;
+function getPublicRooms() {
+    const list = [];
+    for (const id in rooms) {
+        const r = rooms[id];
+        if (!r.isPrivate && r.state === 'lobby') {
+            list.push({
+                id: r.id,
+                name: r.name,
+                hostName: r.players[0]?.username || 'Host',
+                subject: r.config.subject,
+                subtopic: r.config.subtopic,
+                format: r.config.format,
+                count: r.config.count,
+                timer: r.config.timer,
+                playerCount: r.players.length,
+                maxPlayers: r.maxPlayers,
+                createdAt: r.createdAt
+            });
         }
-        if (room.players.length >= 2) {
-            socket.emit('room-error', 'Room is full.');
-            return;
-        }
-        if (room.state !== 'waiting') {
-            socket.emit('room-error', 'Game already started.');
-            return;
-        }
+    }
+    return list;
+}
 
-        room.players.push({ id: socket.id, score: 0, progress: 0 });
-        socket.join(roomId);
-        
-        io.to(roomId).emit('player-joined', room.players.length);
+async function generateArenaQuestions(config) {
+    const count = [5, 10, 15].includes(parseInt(config.count)) ? parseInt(config.count) : 5;
+    const subject = config.subject || 'All';
+    const subtopic = config.subtopic && config.subtopic !== 'All' ? `specifically on subtopic "${config.subtopic}"` : '';
+    const format = config.format || 'mix';
 
-        if (room.players.length === 2) {
-            room.state = 'generating';
-            io.to(roomId).emit('game-generating');
-            
-            try {
-                const prompt = `You are an expert quiz generator. Generate exactly 5 multiple choice questions for a quick multiplayer trivia battle.
-Pick a random science or math topic suitable for high school students.
-The response MUST be a pure JSON array of objects. Do NOT include markdown code blocks.
+    let formatInstruction = '';
+    if (format === 'mcq') {
+        formatInstruction = `All questions must be single-choice Multiple Choice Questions (type: "mcq") with exactly 4 options in "o" and the exact string answer in "a".`;
+    } else if (format === 'tf') {
+        formatInstruction = `All questions must be True/False questions (type: "tf") with "o": ["True", "False"] and "a": "True" or "False".`;
+    } else if (format === 'sata') {
+        formatInstruction = `All questions must be Select All That Apply (type: "sata") with 4 options in "o" and an array of 2 or more correct options in "a".`;
+    } else if (format === 'short') {
+        formatInstruction = `All questions must be Short Answer (type: "short") with "o": [] and a concise expected answer/keyword in "a".`;
+    } else {
+        formatInstruction = `Generate an engaging mix of questions: mostly Multiple Choice (type: "mcq"), with some True/False (type: "tf") and Select All That Apply (type: "sata").`;
+    }
+
+    const prompt = `You are an expert trivia battle question generator. Generate exactly ${count} competitive exam questions.
+Subject focus: ${subject === 'All' ? 'Mixed competitive science, mathematics, and logic' : subject} ${subtopic}.
+Question format: ${formatInstruction}
+The response MUST be a pure JSON array of ${count} objects. Do NOT include markdown code blocks.
 IMPORTANT: Ensure all backslashes are properly escaped for JSON (e.g., if you use LaTeX, write \\\\( instead of \\(, and \\\\frac instead of \\frac).
 Each object strictly must have this structure:
 {
   "topic": "String",
+  "subtopic": "String",
+  "type": "mcq" | "tf" | "sata" | "short",
   "d": "medium",
   "q": "String (the question text)",
-  "o": ["String", "String", "String", "String"] (exactly 4 options),
-  "a": "String (the exact text of the correct option)"
+  "o": ["String", "String", ...],
+  "a": "String" (or Array of Strings if sata),
+  "e": "String (brief explanation)"
 }`;
-                
-                let questions = null;
-                let attempts = 0;
-                
-                while (attempts < 3 && !questions) {
-                    attempts++;
-                    try {
-                        const chatCompletion = await groq.chat.completions.create({
-                            messages: [{ role: 'user', content: prompt }],
-                            model: MODEL,
-                            temperature: 0.7,
-                            max_tokens: 2048
-                        });
-                        
-                        const content = chatCompletion.choices[0]?.message?.content || "[]";
-                        questions = safeJSONParse(content);
-                        if (!Array.isArray(questions) || questions.length !== 5) {
-                            questions = null;
-                            throw new Error("Invalid arena JSON");
-                        }
-                        
-                        for (const q of questions) {
-                            if (q.q && q.a) {
-                                if(!q.type) q.type = 'mcq';
-                                sanitizeQuestionForDB(q);
-                                const newQ = new Question(q);
-                                await newQ.save().catch(e => console.error(e));
-                            }
-                        }
-                    } catch (e) {
-                        console.error(`Attempt ${attempts} failed for arena:`, e.message);
-                    }
-                }
-                
-                if (!questions) {
-                    // DB Fallback
-                    const fallbacks = await Question.aggregate([{ $match: { type: 'mcq' } }, { $sample: { size: 5 } }]);
-                    if (fallbacks && fallbacks.length === 5) {
-                        questions = fallbacks;
-                        console.log("Using DB fallback for arena.");
-                    }
-                }
-                
-                if (questions && questions.length === 5) {
-                    room.questions = questions;
-                    room.state = 'playing';
-                    io.to(roomId).emit('game-start', questions);
-                } else {
-                    throw new Error("Failed to generate or fetch enough questions.");
-                }
-            } catch (err) {
-                console.error('Arena generation failed:', err);
-                io.to(roomId).emit('room-error', 'Failed to generate battle questions. Please try again.');
-                delete rooms[roomId];
+
+    let questions = null;
+    let attempts = 0;
+
+    while (attempts < 3 && !questions) {
+        attempts++;
+        try {
+            const chatCompletion = await groq.chat.completions.create({
+                messages: [{ role: 'user', content: prompt }],
+                model: MODEL,
+                temperature: 0.7,
+                max_tokens: 3072
+            });
+
+            const content = chatCompletion.choices[0]?.message?.content || "[]";
+            let parsed = safeJSONParse(content);
+            if (!Array.isArray(parsed) && parsed && typeof parsed === 'object') {
+                if (Array.isArray(parsed.questions)) parsed = parsed.questions;
+                else if (Array.isArray(parsed.quiz)) parsed = parsed.quiz;
+                else if (Array.isArray(parsed.items)) parsed = parsed.items;
             }
+            questions = parsed;
+            if (Array.isArray(questions)) {
+                questions.forEach(normalizeQuestionFields);
+            }
+            if (!Array.isArray(questions) || questions.length < count) {
+                questions = null;
+                throw new Error("Invalid questions array");
+            }
+
+            if (mongoose.connection.readyState === 1) {
+                for (const q of questions) {
+                    if (q.q && q.a) {
+                        if (!q.type) q.type = 'mcq';
+                        sanitizeQuestionForDB(q);
+                        const newQ = new Question(q);
+                        newQ.save().catch(e => console.error(e));
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn(`Attempt ${attempts} note for arena:`, e.message);
+        }
+    }
+
+    if (!questions || questions.length < count) {
+        if (mongoose.connection.readyState === 1) {
+            try {
+                const query = {};
+                if (subject !== 'All') query.topic = subject;
+                if (format !== 'mix') query.type = format;
+                const fallbacks = await Question.aggregate([{ $match: query }, { $sample: { size: count } }]);
+                if (fallbacks && fallbacks.length > 0) {
+                    questions = fallbacks;
+                    console.log(`Using ${questions.length} DB fallbacks for arena.`);
+                }
+            } catch (dbErr) {
+                console.error("DB aggregate failed:", dbErr.message);
+            }
+        }
+        
+        // Instant built-in fallback questions if Groq LLM or DB are unreachable
+        if (!questions || questions.length === 0) {
+            const fallbackBank = [
+                { q: "What is Newton's First Law of Motion also known as?", o: ["Law of Universal Gravitation", "Law of Inertia", "Law of Conservation of Energy", "Law of Action and Reaction"], a: "Law of Inertia", type: "mcq", topic: "Physics", sub: "Kinematics", e: "Newton's First Law states an object at rest remains at rest unless acted on by an external net force (inertia)." },
+                { q: "Sound waves travel faster in water than in air.", o: ["True", "False"], a: "True", type: "tf", topic: "Physics", sub: "Acoustics", e: "Because water has a higher bulk modulus and density coupling than air, sound travels about 4.3 times faster in water." },
+                { q: "Which of the following are scalar quantities? (Select all that apply)", o: ["Mass", "Velocity", "Temperature", "Acceleration"], a: ["Mass", "Temperature"], type: "sata", topic: "Physics", sub: "Kinematics", e: "Mass and Temperature only have magnitude without directional vector components." },
+                { q: "What fundamental particle carries a negative electric charge?", o: ["Proton", "Neutron", "Electron", "Photon"], a: "Electron", type: "mcq", topic: "Physics", sub: "Electromagnetism", e: "Electrons carry a negative elementary charge of approximately -1.602 × 10^-19 Coulombs." },
+                { q: "What is the SI unit of electric resistance?", o: ["Volt", "Ampere", "Ohm", "Joule"], a: "Ohm", type: "mcq", topic: "Physics", sub: "Electromagnetism", e: "The ohm (symbol: Ω) is the SI unit of electrical impedance and resistance." }
+            ];
+            questions = fallbackBank.slice(0, count);
+        }
+    }
+
+    return questions;
+}
+
+function endBattle(roomId) {
+    const room = rooms[roomId];
+    if (!room || room.state === 'ended') return;
+    room.state = 'ended';
+
+    // Sort: 1. Score desc, 2. Correct count desc, 3. Finish time asc
+    const sorted = [...room.players].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
+        return (a.finishTime || 999999) - (b.finishTime || 999999);
+    });
+
+    const leaderboard = sorted.map((p, idx) => {
+        const rank = idx + 1;
+        const xpBonus = rank === 1 ? 150 : (rank === 2 ? 100 : (rank === 3 ? 75 : 50));
+        return {
+            rank,
+            id: p.id,
+            username: p.username,
+            playerTag: p.playerTag,
+            avatar: p.avatar,
+            score: p.score,
+            correctCount: p.correctCount,
+            totalQuestions: room.questions.length,
+            accuracy: Math.round((p.correctCount / (room.questions.length || 1)) * 100),
+            timeSeconds: p.finishTime ? Math.round(p.finishTime / 1000) : null,
+            xpBonus,
+            xpAwarded: xpBonus
+        };
+    });
+
+    io.to(roomId).emit('battle-over', {
+        rankings: leaderboard,
+        leaderboard,
+        config: room.config
+    });
+
+    if (!room.isPrivate) io.emit('public-rooms-list', getPublicRooms());
+}
+
+function leaveArenaRoom(socket, roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    socket.leave(roomId);
+    const leavingPlayer = room.players.find(p => p.id === socket.id);
+    room.players = room.players.filter(p => p.id !== socket.id);
+
+    if (room.players.length === 0) {
+        delete rooms[roomId];
+    } else {
+        if (room.hostId === socket.id && room.players.length > 0) {
+            room.hostId = room.players[0].id;
+            room.players[0].isHost = true;
+            room.players[0].isReady = true;
+        }
+
+        if (room.state === 'playing') {
+            io.to(roomId).emit('player-left', {
+                username: leavingPlayer?.username || 'A player',
+                players: room.players.map(p => ({
+                    id: p.id,
+                    username: p.username,
+                    playerTag: p.playerTag,
+                    avatar: p.avatar,
+                    score: p.score,
+                    progress: p.progress,
+                    finished: p.finished
+                }))
+            });
+
+            const allFinished = room.players.every(p => p.finished);
+            if (allFinished && room.players.length > 0) {
+                endBattle(roomId);
+            }
+        } else {
+            io.to(roomId).emit('room-roster-update', {
+                players: room.players,
+                state: room.state,
+                hostId: room.hostId
+            });
+        }
+    }
+
+    io.emit('public-rooms-list', getPublicRooms());
+}
+
+io.on('connection', (socket) => {
+    // Send public rooms list on request
+    socket.on('get-public-rooms', () => {
+        socket.emit('public-rooms-list', getPublicRooms());
+    });
+
+    // Create Room
+    socket.on('create-room', ({ isPrivate, maxPlayers, config, playerInfo }) => {
+        const roomId = Math.floor(1000 + Math.random() * 9000).toString();
+        const passcode = isPrivate ? Math.floor(100000 + Math.random() * 900000).toString() : null;
+        const username = playerInfo?.username || 'Scholar';
+        const playerTag = playerInfo?.playerTag || `#SP-${roomId}`;
+        const avatar = playerInfo?.avatar || '🎓';
+
+        const room = {
+            id: roomId,
+            name: `${username}'s Arena`,
+            isPrivate: !!isPrivate,
+            passcode: passcode,
+            maxPlayers: Math.min(8, Math.max(2, parseInt(maxPlayers) || 4)),
+            hostId: socket.id,
+            state: 'lobby',
+            config: {
+                subject: config?.subject || 'All',
+                subtopic: config?.subtopic || 'All',
+                format: config?.format || 'mix',
+                count: [5, 10, 15].includes(parseInt(config?.count)) ? parseInt(config.count) : 5,
+                timer: parseInt(config?.timer) >= 0 ? parseInt(config.timer) : 180
+            },
+            players: [
+                {
+                    id: socket.id,
+                    username,
+                    playerTag,
+                    avatar,
+                    score: 0,
+                    progress: 0,
+                    isHost: true,
+                    isReady: true,
+                    finished: false,
+                    accuracy: 0,
+                    correctCount: 0
+                }
+            ],
+            questions: [],
+            createdAt: Date.now()
+        };
+
+        rooms[roomId] = room;
+        socket.join(roomId);
+
+        socket.emit('room-created', {
+            roomId,
+            passcode,
+            isPrivate: room.isPrivate,
+            maxPlayers: room.maxPlayers,
+            config: room.config,
+            players: room.players,
+            isHost: true
+        });
+
+        if (!room.isPrivate) {
+            io.emit('public-rooms-list', getPublicRooms());
         }
     });
 
-    socket.on('submit-answer', ({ roomId, qIndex, isCorrect }) => {
+    // Join Room
+    socket.on('join-room', ({ roomId, passcode, playerInfo }) => {
+        const room = rooms[roomId];
+        if (!room) {
+            return socket.emit('room-error', 'Room not found. Check the code and try again.');
+        }
+        if (room.state !== 'lobby') {
+            return socket.emit('room-error', 'Battle is already in progress in this room.');
+        }
+        if (room.players.length >= room.maxPlayers) {
+            return socket.emit('room-error', 'This arena room is full.');
+        }
+        if (room.isPrivate) {
+            if (!passcode || passcode.toString().trim() !== (room.passcode || '').toString().trim()) {
+                return socket.emit('room-error', 'Invalid passcode for this private room.');
+            }
+        }
+
+        const username = playerInfo?.username || `Scholar ${room.players.length + 1}`;
+        const playerTag = playerInfo?.playerTag || `#SP-${Math.floor(1000 + Math.random() * 9000)}`;
+        const avatar = playerInfo?.avatar || '⚡';
+
+        const newPlayer = {
+            id: socket.id,
+            username,
+            playerTag,
+            avatar,
+            score: 0,
+            progress: 0,
+            isHost: false,
+            isReady: false,
+            finished: false,
+            accuracy: 0,
+            correctCount: 0
+        };
+
+        room.players.push(newPlayer);
+        socket.join(roomId);
+
+        socket.emit('room-joined', {
+            roomId,
+            passcode: room.passcode,
+            isPrivate: room.isPrivate,
+            maxPlayers: room.maxPlayers,
+            config: room.config,
+            players: room.players,
+            isHost: false
+        });
+
+        io.to(roomId).emit('room-roster-update', {
+            players: room.players,
+            state: room.state,
+            hostId: room.hostId
+        });
+
+        if (!room.isPrivate) {
+            io.emit('public-rooms-list', getPublicRooms());
+        }
+    });
+
+    // Toggle Ready State
+    socket.on('toggle-ready', ({ roomId }) => {
         const room = rooms[roomId];
         if (!room) return;
-        
         const player = room.players.find(p => p.id === socket.id);
-        if (player) {
-            if (isCorrect) player.score += 10;
-            player.progress = qIndex + 1;
-            
-            io.to(roomId).emit('score-update', {
-                players: room.players.map(p => ({ id: p.id, score: p.score, progress: p.progress }))
+        if (player && !player.isHost) {
+            player.isReady = !player.isReady;
+            io.to(roomId).emit('room-roster-update', {
+                players: room.players,
+                state: room.state,
+                hostId: room.hostId
             });
         }
     });
 
-    socket.on('leave-room', (roomId) => {
-        socket.leave(roomId);
-        if (rooms[roomId]) {
-            rooms[roomId].players = rooms[roomId].players.filter(p => p.id !== socket.id);
-            if (rooms[roomId].players.length === 0) {
-                delete rooms[roomId];
-            } else {
-                io.to(roomId).emit('opponent-disconnected');
+    // Start Battle (Host Only)
+    socket.on('start-battle', async ({ roomId }) => {
+        const room = rooms[roomId];
+        if (!room) return;
+        if (room.hostId !== socket.id) {
+            return socket.emit('room-error', 'Only the host can start the battle.');
+        }
+
+        room.state = 'generating';
+        io.to(roomId).emit('game-generating', {
+            message: 'Generating battle questions with custom syllabus & configuration...'
+        });
+        if (!room.isPrivate) io.emit('public-rooms-list', getPublicRooms());
+
+        try {
+            const questions = await generateArenaQuestions(room.config);
+            if (!questions || questions.length < room.config.count) {
+                throw new Error("Could not assemble enough questions.");
             }
+            room.questions = questions;
+            room.state = 'playing';
+            room.startTime = Date.now();
+            room.players.forEach(p => {
+                p.score = 0;
+                p.progress = 0;
+                p.finished = false;
+                p.correctCount = 0;
+                p.finishTime = null;
+            });
+
+            io.to(roomId).emit('game-start', {
+                questions: room.questions,
+                config: room.config,
+                players: room.players.map(p => ({
+                    id: p.id,
+                    username: p.username,
+                    playerTag: p.playerTag,
+                    avatar: p.avatar,
+                    score: p.score,
+                    progress: p.progress
+                }))
+            });
+        } catch (err) {
+            console.error('Arena generation failed:', err);
+            room.state = 'lobby';
+            io.to(roomId).emit('room-error', 'Failed to generate battle questions. Please try again.');
+            io.to(roomId).emit('room-roster-update', { players: room.players, state: room.state, hostId: room.hostId });
         }
     });
 
+    // Submit Answer
+    socket.on('submit-answer', ({ roomId, qIndex, isCorrect, answerTime }) => {
+        const room = rooms[roomId];
+        if (!room || room.state !== 'playing') return;
+
+        const player = room.players.find(p => p.id === socket.id);
+        if (!player) return;
+
+        if (isCorrect) {
+            const speedBonus = answerTime && answerTime < 8 ? 5 : (answerTime && answerTime < 15 ? 2 : 0);
+            player.score += (10 + speedBonus);
+            player.correctCount++;
+        }
+        player.progress = qIndex + 1;
+        player.accuracy = Math.round((player.correctCount / player.progress) * 100);
+
+        if (player.progress >= room.questions.length && !player.finished) {
+            player.finished = true;
+            player.finishTime = Date.now() - room.startTime;
+        }
+
+        io.to(roomId).emit('score-update', {
+            players: room.players.map(p => ({
+                id: p.id,
+                username: p.username,
+                playerTag: p.playerTag,
+                avatar: p.avatar,
+                score: p.score,
+                progress: p.progress,
+                finished: p.finished,
+                accuracy: player.accuracy
+            }))
+        });
+
+        const allFinished = room.players.every(p => p.finished);
+        if (allFinished) {
+            endBattle(roomId);
+        }
+    });
+
+    // Rematch (Host Only)
+    socket.on('rematch-battle', ({ roomId }) => {
+        const room = rooms[roomId];
+        if (!room || room.hostId !== socket.id) return;
+
+        room.state = 'lobby';
+        room.questions = [];
+        room.players.forEach(p => {
+            p.score = 0;
+            p.progress = 0;
+            p.finished = false;
+            p.correctCount = 0;
+            p.isReady = p.isHost;
+        });
+
+        io.to(roomId).emit('rematch-started', {
+            config: room.config,
+            players: room.players,
+            hostId: room.hostId
+        });
+
+        if (!room.isPrivate) io.emit('public-rooms-list', getPublicRooms());
+    });
+
+    // Leave Room
+    socket.on('leave-room', ({ roomId }) => {
+        leaveArenaRoom(socket, roomId);
+    });
+
+    // Disconnect
     socket.on('disconnect', () => {
         for (const roomId in rooms) {
-            const room = rooms[roomId];
-            if (room.players.find(p => p.id === socket.id)) {
-                room.players = room.players.filter(p => p.id !== socket.id);
-                if (room.players.length === 0) delete rooms[roomId];
-                else io.to(roomId).emit('opponent-disconnected');
+            if (rooms[roomId].players.some(p => p.id === socket.id)) {
+                leaveArenaRoom(socket, roomId);
             }
         }
     });
 });
+

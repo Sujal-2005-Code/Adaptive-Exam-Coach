@@ -149,19 +149,23 @@ function updateCustomSubjectDropdown() {
     });
     initMicroTracker();
 
-    if (!select) return;
-    
-    if (customSyllabusData && Object.keys(customSyllabusData).length > 0) {
-        select.innerHTML = '';
-        Object.keys(customSyllabusData).forEach(subject => {
-            const option = document.createElement('option');
-            option.value = subject;
-            option.textContent = subject;
-            select.appendChild(option);
-        });
-        
-        // Trigger change event to populate topic dropdown for the first subject
-        select.dispatchEvent(new Event('change'));
+    if (select) {
+        if (customSyllabusData && Object.keys(customSyllabusData).length > 0) {
+            select.innerHTML = '';
+            Object.keys(customSyllabusData).forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                select.appendChild(option);
+            });
+            
+            // Trigger change event to populate topic dropdown for the first subject
+            select.dispatchEvent(new Event('change'));
+        }
+    }
+
+    if (typeof populateArenaSubjectsAndTopics === 'function') {
+        populateArenaSubjectsAndTopics();
     }
 }
 
@@ -271,6 +275,7 @@ window.switchActiveTab = function(tabName) {
   if (tabName === 'plan' && typeof renderPlan === 'function') renderPlan();
   if (tabName === 'history' && typeof renderHistory === 'function') renderHistory();
   if (tabName === 'resources' && typeof renderResources === 'function') renderResources();
+  if (tabName === 'arena' && typeof initArena === 'function') initArena();
 
   // On small viewports, auto close off-canvas sidebar
   if (window.innerWidth <= 1024) {
@@ -996,6 +1001,58 @@ document.getElementById('chatInput').addEventListener('keydown', e=>{ if(e.key==
 
 // ================= FLOATING AI COACH CONTROLS & ANTI-CHEATING LOCK =================
 let isQuizActive = false;
+let isArenaBattleActive = false;
+
+window.setArenaBattleCoachLock = function(locked) {
+  isArenaBattleActive = Boolean(locked);
+  const floatBtn = document.getElementById('coachFloatingBtn');
+  const headerBtn = document.getElementById('coachHeaderBtn');
+  const sidebarCoachBtn = document.getElementById('sidebarCoachBtn');
+  const drawer = document.getElementById('coachDrawer');
+
+  if (locked) {
+    if (drawer) drawer.style.display = 'none';
+
+    if (sidebarCoachBtn) {
+      sidebarCoachBtn.classList.add('coach-locked');
+      sidebarCoachBtn.title = "AI Coach is disabled during multiplayer arena battle.";
+      const sub = document.getElementById('sidebarCoachSub');
+      if (sub) {
+        sub.textContent = "⚔️ Battle Active";
+        sub.style.color = "var(--red-soft)";
+      }
+      const beacon = document.getElementById('sidebarCoachBeacon');
+      if (beacon) {
+        beacon.style.background = "var(--red-soft)";
+        beacon.style.boxShadow = "0 0 0 3px rgba(181, 56, 44, 0.25)";
+      }
+    }
+
+    if (floatBtn) {
+      floatBtn.classList.add('coach-locked');
+      floatBtn.title = "AI Coach is disabled during multiplayer arena battle.";
+      floatBtn.innerHTML = `
+        <div class="coach-float-icon">⚔️</div>
+        <div class="coach-float-content">
+          <span class="coach-float-title">Coach Disabled</span>
+          <span class="coach-float-sub" style="color:var(--red-soft);">Arena Battle</span>
+        </div>
+      `;
+    }
+
+    if (headerBtn) {
+      headerBtn.classList.add('coach-locked');
+      headerBtn.title = "AI Coach is disabled during multiplayer arena battle.";
+      headerBtn.innerHTML = `⚔️ <span class="btn-text">Locked</span>`;
+    }
+  } else {
+    if (isQuizActive) {
+      setCoachLockState(true);
+    } else {
+      setCoachLockState(false);
+    }
+  }
+};
 
 window.setCoachLockState = function(locked) {
   isQuizActive = locked;
@@ -1004,6 +1061,11 @@ window.setCoachLockState = function(locked) {
   const sidebarCoachBtn = document.getElementById('sidebarCoachBtn');
   const drawer = document.getElementById('coachDrawer');
   const helperBanner = document.querySelector('.quiz-coach-helper-banner');
+
+  if (isArenaBattleActive) {
+    // Arena battle has highest priority lock
+    return;
+  }
 
   if (locked) {
     if (drawer) drawer.style.display = 'none';
@@ -1102,6 +1164,10 @@ window.setCoachLockState = function(locked) {
 };
 
 window.toggleCoachDrawer = function() {
+  if (isArenaBattleActive) {
+    alert("⚔️ Arena Battle in Progress!\n\nThe AI Coach is strictly disabled during multiplayer arena battles to uphold fair play and competitive integrity.");
+    return;
+  }
   if (isQuizActive) {
     alert("🛡️ Anti-Cheating Lock Active!\n\nThe AI Coach is disabled during an active quiz to uphold academic integrity. Complete or end the quiz to ask questions and review concepts.");
     return;
@@ -1751,139 +1817,8 @@ async function initializeApp() {
 
 initializeApp();
 
-// ================= MULTIPLAYER ARENA LOGIC =================
-const socket = io(BACKEND_URL);
-let currentArenaRoom = null;
-let arenaQuestions = [];
-let currentArenaQ = 0;
-
-document.getElementById('arenaCreateBtn').addEventListener('click', () => {
-    socket.emit('create-room');
-});
-
-document.getElementById('arenaJoinBtn').addEventListener('click', () => {
-    const code = document.getElementById('arenaRoomCode').value.trim();
-    if (code.length === 4) {
-        socket.emit('join-room', code);
-    }
-});
-
-socket.on('room-created', (roomId) => {
-    currentArenaRoom = roomId;
-    document.getElementById('arenaSetup').style.display = 'none';
-    document.getElementById('arenaGame').style.display = 'block';
-    document.getElementById('arenaCurrentRoom').textContent = roomId;
-});
-
-socket.on('player-joined', (count) => {
-    if (!currentArenaRoom) {
-        currentArenaRoom = document.getElementById('arenaRoomCode').value.trim();
-        document.getElementById('arenaSetup').style.display = 'none';
-        document.getElementById('arenaGame').style.display = 'block';
-        document.getElementById('arenaCurrentRoom').textContent = currentArenaRoom;
-    }
-});
-
-socket.on('game-generating', () => {
-    document.getElementById('arenaWaiting').innerHTML = "⚙️ AI is generating battle questions... Get ready!";
-});
-
-socket.on('game-start', (questions) => {
-    setCoachLockState(true);
-    arenaQuestions = questions;
-    currentArenaQ = 0;
-    
-    document.getElementById('arenaWaiting').style.display = 'none';
-    document.getElementById('arenaQuiz').style.display = 'block';
-    
-    renderArenaQuestion();
-});
-
-socket.on('score-update', (data) => {
-    const myPlayer = data.players.find(p => p.id === socket.id);
-    const oppPlayer = data.players.find(p => p.id !== socket.id);
-    
-    if (myPlayer) {
-        document.getElementById('arenaMyScore').textContent = myPlayer.score;
-        document.getElementById('arenaMyProgress').style.width = (myPlayer.progress / 5 * 100) + '%';
-    }
-    if (oppPlayer) {
-        document.getElementById('arenaOppScore').textContent = oppPlayer.score;
-        document.getElementById('arenaOppProgress').style.width = (oppPlayer.progress / 5 * 100) + '%';
-    }
-});
-
-socket.on('opponent-disconnected', () => {
-    alert("Opponent disconnected. You win!");
-    addXP(100);
-    resetArena();
-});
-
-socket.on('room-error', (msg) => {
-    const st = document.getElementById('arenaStatus');
-    st.textContent = msg;
-    st.style.display = 'block';
-});
-
-function renderArenaQuestion() {
-    if (currentArenaQ >= arenaQuestions.length) {
-        document.getElementById('arenaQuiz').innerHTML = `<div style="text-align:center; padding:20px; font-size:24px; color:var(--gold);">Battle Complete!</div>`;
-        addXP(50);
-        setTimeout(resetArena, 4000);
-        return;
-    }
-    
-    const q = arenaQuestions[currentArenaQ];
-    document.getElementById('aqProgress').textContent = `Question ${currentArenaQ + 1} / 5`;
-    document.getElementById('aqText').innerHTML = marked.parse(q.q || q.question || "");
-    
-    // Shuffle options
-    let opts = q.o ? [...q.o] : [];
-    opts.sort(() => Math.random() - 0.5);
-    
-    const optsHtml = opts.map((opt, i) => `<button class="opt" id="aqOpt${i}" onclick="submitArenaAnswer('${opt}', ${i}, '${q.a}')">${marked.parse(opt || '').replace(/<p>|<\/p>/g,'')}</button>`).join('');
-    document.getElementById('aqOptions').innerHTML = optsHtml;
-    document.getElementById('aqExplain').style.display = 'none';
-    if(window.MathJax) MathJax.typesetPromise();
-}
-
-window.submitArenaAnswer = function(selected, idx, correct) {
-    const isCorrect = (selected === correct);
-    socket.emit('submit-answer', { roomId: currentArenaRoom, qIndex: currentArenaQ, isCorrect });
-    
-    const btns = document.getElementById('aqOptions').querySelectorAll('.opt');
-    btns.forEach(b => b.disabled = true);
-    
-    document.getElementById(`aqOpt${idx}`).classList.add(isCorrect ? 'correct' : 'wrong');
-    
-    if(isCorrect) addXP(20);
-    
-    setTimeout(() => {
-        currentArenaQ++;
-        renderArenaQuestion();
-    }, 1500);
-};
-
-function resetArena() {
-    setCoachLockState(false);
-    currentArenaRoom = null;
-    arenaQuestions = [];
-    document.getElementById('arenaSetup').style.display = 'block';
-    document.getElementById('arenaGame').style.display = 'none';
-    document.getElementById('arenaQuiz').style.display = 'none';
-    document.getElementById('arenaQuiz').innerHTML = `
-        <div id="aqProgress" class="q-progress">Question 1 / 5</div>
-        <div id="aqText" class="q-text" style="font-size:18px;"></div>
-        <div id="aqOptions" class="options"></div>
-        <div id="aqExplain" class="explain-box"></div>
-    `;
-    document.getElementById('arenaWaiting').style.display = 'block';
-    document.getElementById('arenaWaiting').innerHTML = "⏳ Waiting for opponent to join...";
-    document.getElementById('arenaMyScore').textContent = '0';
-    document.getElementById('arenaOppScore').textContent = '0';
-    document.getElementById('arenaMyProgress').style.width = '0%';
-    document.getElementById('arenaOppProgress').style.width = '0%';
-}
+// ================= MULTIPLAYER ARENA 2.0 =================
+// Full real-time socket architecture implemented at bottom of script.js
 
 // Auth UI Events
 document.getElementById('showRegister').onclick = (e) => { e.preventDefault(); document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; document.getElementById('authError').style.display = 'none'; };
@@ -2083,3 +2018,1370 @@ document.getElementById('uploadSyllabusBtn').onclick = async () => {
         statusDiv.style.color = 'var(--accent-red)';
     }
 };
+
+/* ==========================================================================
+   MULTIPLAYER ARENA 2.0 - REAL-TIME BATTLE CLIENT ENGINE
+   ========================================================================== */
+
+let arenaSocket = null;
+let currentArenaRoom = null;
+let currentArenaQuestions = [];
+let currentArenaQIndex = 0;
+let arenaTimerInterval = null;
+let arenaQStartTime = null;
+
+function getScholarPlayerTag() {
+  let tag = localStorage.getItem('scholar_player_tag');
+  if (!tag) {
+    tag = `#SP-${Math.floor(1000 + Math.random() * 9000)}`;
+    localStorage.setItem('scholar_player_tag', tag);
+  }
+  return tag;
+}
+
+function getScholarAvatar() {
+  const avatars = ['🎓', '⚡', '🦉', '🚀', '🧠', '🌟', '🎯', '🔥'];
+  const name = currentUser || 'Scholar';
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
+  return avatars[hash % avatars.length];
+}
+
+function initArenaIdentity() {
+  const nameEl = document.getElementById('arenaUserName');
+  const tagEl = document.getElementById('arenaUserTag');
+  const avatarEl = document.getElementById('arenaUserAvatar');
+  const copyBtn = document.getElementById('copyPlayerTagBtn');
+
+  const tag = getScholarPlayerTag();
+  const avatar = getScholarAvatar();
+  const name = currentUser || 'Scholar';
+
+  if (nameEl) nameEl.textContent = name;
+  if (tagEl) tagEl.textContent = tag;
+  if (avatarEl) avatarEl.textContent = avatar;
+
+  if (copyBtn && !copyBtn.dataset.bound) {
+    copyBtn.dataset.bound = 'true';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(tag).then(() => {
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = '✓ Copied!';
+        copyBtn.style.color = 'var(--green)';
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+          copyBtn.style.color = '';
+        }, 1800);
+      }).catch(() => {
+        prompt('Copy your Scholar Tag:', tag);
+      });
+    });
+  }
+}
+
+function setupArenaTabs() {
+  const tabBtns = document.querySelectorAll('.arena-tab-btn');
+  tabBtns.forEach(btn => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = 'true';
+    btn.addEventListener('click', () => {
+      const targetTab = btn.dataset.arenaTab;
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const tabs = {
+        public: document.getElementById('arenaTabPublic'),
+        create: document.getElementById('arenaTabCreate'),
+        private: document.getElementById('arenaTabPrivate')
+      };
+
+      Object.entries(tabs).forEach(([k, el]) => {
+        if (!el) return;
+        el.style.display = (k === targetTab) ? 'block' : 'none';
+      });
+
+      if (targetTab === 'public') {
+        fetchPublicLobbies();
+      } else if (targetTab === 'create') {
+        populateArenaSubjectsAndTopics();
+      }
+    });
+  });
+
+  const emptyCreateBtn = document.getElementById('emptyCreateBtn');
+  if (emptyCreateBtn && !emptyCreateBtn.dataset.bound) {
+    emptyCreateBtn.dataset.bound = 'true';
+    emptyCreateBtn.addEventListener('click', () => {
+      const createTabBtn = document.querySelector('button[data-arena-tab="create"]');
+      if (createTabBtn) createTabBtn.click();
+    });
+  }
+}
+
+function populateArenaSubjectsAndTopics() {
+  const subjectSelect = document.getElementById('arenaSubjectSelect');
+  const topicSelect = document.getElementById('arenaTopicSelect');
+  const syllabusTag = document.getElementById('arenaSyllabusTag');
+  const filterSubjSelect = document.getElementById('arenaFilterSubject');
+
+  if (!subjectSelect || !topicSelect) return;
+
+  const hasCustom = typeof customSyllabusData === 'object' && customSyllabusData !== null && Object.keys(customSyllabusData).length > 0;
+
+  if (syllabusTag) {
+    if (hasCustom) {
+      syllabusTag.textContent = `📜 ${customSyllabusName || 'Custom Profile Syllabus'}`;
+      syllabusTag.style.display = 'inline-flex';
+      syllabusTag.title = 'Subjects and topics are loaded from your profile syllabus';
+    } else {
+      syllabusTag.style.display = 'none';
+      syllabusTag.textContent = '';
+    }
+  }
+
+  // Determine subjects: use custom syllabus if available, else defaults
+  let subjects = [];
+  if (hasCustom) {
+    subjects = Object.keys(customSyllabusData);
+  } else if (Array.isArray(TOPICS) && TOPICS.length > 0) {
+    subjects = TOPICS;
+  } else {
+    subjects = ['Math', 'Physics', 'Chemistry', 'Biology'];
+  }
+
+  // Populate #arenaSubjectSelect
+  const prevSubject = subjectSelect.value || 'All';
+  subjectSelect.innerHTML = '<option value="All">All Subjects (Mixed)</option>';
+  subjects.forEach(subj => {
+    const opt = document.createElement('option');
+    opt.value = subj;
+    opt.textContent = subj;
+    subjectSelect.appendChild(opt);
+  });
+
+  if (subjects.includes(prevSubject)) {
+    subjectSelect.value = prevSubject;
+  } else {
+    subjectSelect.value = 'All';
+  }
+
+  // Populate #arenaFilterSubject (in public lobbies toolbar)
+  if (filterSubjSelect) {
+    const prevFilterSubj = filterSubjSelect.value || 'All';
+    filterSubjSelect.innerHTML = '<option value="All">All Subjects</option>';
+    subjects.forEach(subj => {
+      const opt = document.createElement('option');
+      opt.value = subj;
+      opt.textContent = subj;
+      filterSubjSelect.appendChild(opt);
+    });
+
+    if (subjects.includes(prevFilterSubj)) {
+      filterSubjSelect.value = prevFilterSubj;
+    } else {
+      filterSubjSelect.value = 'All';
+    }
+  }
+
+  // Function to refresh subtopics whenever subject changes
+  function updateArenaTopics() {
+    const selected = subjectSelect.value;
+    const prevTopic = topicSelect.value || 'All';
+
+    topicSelect.innerHTML = '<option value="All">All Subtopics</option>';
+
+    let subs = [];
+    if (selected === 'All') {
+      if (hasCustom) {
+        Object.keys(customSyllabusData).forEach(s => {
+          if (Array.isArray(customSyllabusData[s])) {
+            subs = subs.concat(customSyllabusData[s]);
+          }
+        });
+      } else {
+        subjects.forEach(t => {
+          if (MICRO_TOPICS && MICRO_TOPICS[t]) subs = subs.concat(MICRO_TOPICS[t]);
+        });
+      }
+    } else {
+      if (hasCustom && Array.isArray(customSyllabusData[selected])) {
+        subs = customSyllabusData[selected];
+      } else if (MICRO_TOPICS && MICRO_TOPICS[selected]) {
+        subs = MICRO_TOPICS[selected];
+      }
+    }
+
+    const uniqueSubs = Array.from(new Set(subs)).filter(Boolean);
+    uniqueSubs.forEach(sub => {
+      const opt = document.createElement('option');
+      opt.value = sub;
+      opt.textContent = sub;
+      topicSelect.appendChild(opt);
+    });
+
+    if (uniqueSubs.includes(prevTopic)) {
+      topicSelect.value = prevTopic;
+    } else {
+      topicSelect.value = 'All';
+    }
+  }
+
+  if (!subjectSelect.dataset.boundTopicListener) {
+    subjectSelect.dataset.boundTopicListener = 'true';
+    subjectSelect.addEventListener('change', updateArenaTopics);
+  }
+
+  updateArenaTopics();
+}
+
+function setupArenaVisibilityPicker() {
+  const publicOpt = document.getElementById('visOptionPublic');
+  const privateOpt = document.getElementById('visOptionPrivate');
+  if (!publicOpt || !privateOpt) return;
+
+  publicOpt.addEventListener('click', () => {
+    publicOpt.classList.add('active');
+    privateOpt.classList.remove('active');
+    const radio = publicOpt.querySelector('input');
+    if (radio) radio.checked = true;
+  });
+
+  privateOpt.addEventListener('click', () => {
+    privateOpt.classList.add('active');
+    publicOpt.classList.remove('active');
+    const radio = privateOpt.querySelector('input');
+    if (radio) radio.checked = true;
+  });
+}
+
+function ensureArenaSocket() {
+  if (arenaSocket && arenaSocket.connected) return arenaSocket;
+
+  if (typeof io !== 'function') {
+    console.error('Socket.io client library not loaded.');
+    return null;
+  }
+
+  arenaSocket = io(BACKEND_URL, {
+    transports: ['websocket', 'polling'],
+    reconnectionAttempts: 5
+  });
+
+  // Socket Event Listeners
+  arenaSocket.on('connect', () => {
+    console.log('⚡ Connected to Arena Socket:', arenaSocket.id);
+    fetchPublicLobbies();
+  });
+
+  arenaSocket.on('public-rooms-list', (rooms) => {
+    renderPublicLobbies(rooms);
+  });
+
+  arenaSocket.on('room-created', (data) => {
+    handleRoomEntered(data, true);
+  });
+
+  arenaSocket.on('room-joined', (data) => {
+    handleRoomEntered(data, false);
+  });
+
+  arenaSocket.on('room-roster-update', ({ players, state, hostId }) => {
+    if (!currentArenaRoom) return;
+    currentArenaRoom.players = players;
+    currentArenaRoom.hostId = hostId;
+    currentArenaRoom.isHost = (hostId === arenaSocket.id);
+    renderWaitingRoster(players, hostId);
+  });
+
+  arenaSocket.on('game-generating', ({ message }) => {
+    const statusMsg = document.getElementById('arenaStatusMsg');
+    if (statusMsg) {
+      statusMsg.textContent = `⚙️ ${message}`;
+      statusMsg.style.color = 'var(--gold)';
+    }
+    const startBtn = document.getElementById('arenaStartBattleBtn');
+    if (startBtn) {
+      startBtn.disabled = true;
+      startBtn.textContent = '⏳ Preparing Arena...';
+    }
+  });
+
+  arenaSocket.on('game-start', ({ questions, config, players }) => {
+    currentArenaQuestions = questions || [];
+    currentArenaQIndex = 0;
+    if (currentArenaRoom) {
+      currentArenaRoom.config = config;
+      currentArenaRoom.players = players;
+    }
+    startBattlePhase();
+  });
+
+  arenaSocket.on('score-update', ({ players }) => {
+    if (!currentArenaRoom) return;
+    currentArenaRoom.players = players;
+    renderScoreboardTrack(players);
+  });
+
+  arenaSocket.on('battle-over', ({ rankings, roomConfig }) => {
+    endBattlePhase(rankings, roomConfig);
+  });
+
+  arenaSocket.on('rematch-started', ({ config, players, hostId }) => {
+    if (!currentArenaRoom) return;
+    currentArenaRoom.config = config;
+    currentArenaRoom.players = players;
+    currentArenaRoom.hostId = hostId;
+    currentArenaRoom.isHost = (hostId === arenaSocket.id);
+    resetToWaitingRoom();
+  });
+
+  arenaSocket.on('room-error', (msg) => {
+    const errorBox = document.getElementById('arenaPrivateError');
+    if (errorBox) {
+      errorBox.textContent = `⚠️ ${msg}`;
+      errorBox.style.display = 'block';
+    } else {
+      alert(`Arena Notice: ${msg}`);
+    }
+    const startBtn = document.getElementById('arenaStartBattleBtn');
+    if (startBtn) {
+      startBtn.disabled = false;
+      startBtn.textContent = '🚀 Start Battle Now';
+    }
+  });
+
+  return arenaSocket;
+}
+
+let allPublicRoomsCache = [];
+
+function fetchPublicLobbies() {
+  if (arenaSocket && arenaSocket.connected) {
+    arenaSocket.emit('get-public-rooms');
+  }
+}
+
+function handlePublicRoomsList(rooms) {
+  allPublicRoomsCache = Array.isArray(rooms) ? rooms : [];
+  applyLobbyFilters();
+}
+
+function setupPublicLobbiesSearchAndFilters() {
+  const searchInput = document.getElementById('arenaLobbySearch');
+  const clearBtn = document.getElementById('arenaClearSearchBtn');
+  const subjectSelect = document.getElementById('arenaFilterSubject');
+  const formatSelect = document.getElementById('arenaFilterFormat');
+  const availSelect = document.getElementById('arenaFilterAvailability');
+
+  if (searchInput && !searchInput.dataset.bound) {
+    searchInput.dataset.bound = 'true';
+    searchInput.addEventListener('input', () => {
+      applyLobbyFilters();
+    });
+  }
+
+  if (clearBtn && !clearBtn.dataset.bound) {
+    clearBtn.dataset.bound = 'true';
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.style.display = 'none';
+      applyLobbyFilters();
+      searchInput.focus();
+    });
+  }
+
+  if (subjectSelect && !subjectSelect.dataset.bound) {
+    subjectSelect.dataset.bound = 'true';
+    subjectSelect.addEventListener('change', () => {
+      applyLobbyFilters();
+    });
+  }
+
+  if (formatSelect && !formatSelect.dataset.bound) {
+    formatSelect.dataset.bound = 'true';
+    formatSelect.addEventListener('change', () => {
+      applyLobbyFilters();
+    });
+  }
+
+  if (availSelect && !availSelect.dataset.bound) {
+    availSelect.dataset.bound = 'true';
+    availSelect.addEventListener('change', () => {
+      applyLobbyFilters();
+    });
+  }
+}
+
+function resetAllLobbyFilters() {
+  const searchInput = document.getElementById('arenaLobbySearch');
+  const clearBtn = document.getElementById('arenaClearSearchBtn');
+  const subjectSelect = document.getElementById('arenaFilterSubject');
+  const formatSelect = document.getElementById('arenaFilterFormat');
+  const availSelect = document.getElementById('arenaFilterAvailability');
+
+  if (searchInput) searchInput.value = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  if (subjectSelect) subjectSelect.value = 'All';
+  if (formatSelect) formatSelect.value = 'All';
+  if (availSelect) availSelect.value = 'all';
+
+  applyLobbyFilters();
+}
+
+function applyLobbyFilters() {
+  const searchInput = document.getElementById('arenaLobbySearch');
+  const clearBtn = document.getElementById('arenaClearSearchBtn');
+  const subjectSelect = document.getElementById('arenaFilterSubject');
+  const formatSelect = document.getElementById('arenaFilterFormat');
+  const availSelect = document.getElementById('arenaFilterAvailability');
+  const summaryBox = document.getElementById('arenaFilterSummary');
+
+  const query = (searchInput?.value || '').trim().toLowerCase();
+  const selectedSubj = subjectSelect?.value || 'All';
+  const selectedFormat = formatSelect?.value || 'All';
+  const selectedAvail = availSelect?.value || 'open';
+
+  if (clearBtn) {
+    clearBtn.style.display = query ? 'block' : 'none';
+  }
+
+  const filtered = allPublicRoomsCache.filter(r => {
+    // 1. Text search (matches room code, room name, host scholar name, subject, subtopic)
+    if (query) {
+      const idMatch = String(r.id || '').toLowerCase().includes(query) || (`#${r.id}`).toLowerCase().includes(query);
+      const nameMatch = String(r.name || '').toLowerCase().includes(query);
+      const hostMatch = String(r.hostName || '').toLowerCase().includes(query);
+      const subjMatch = String(r.subject || '').toLowerCase().includes(query);
+      const subtopicMatch = String(r.subtopic || '').toLowerCase().includes(query);
+      if (!idMatch && !nameMatch && !hostMatch && !subjMatch && !subtopicMatch) {
+        return false;
+      }
+    }
+
+    // 2. Subject filter
+    if (selectedSubj !== 'All') {
+      const roomSubj = String(r.subject || '').trim().toLowerCase();
+      const targetSubj = selectedSubj.trim().toLowerCase();
+      if (roomSubj !== targetSubj && roomSubj !== 'all' && roomSubj !== 'all subjects') {
+        return false;
+      }
+    }
+
+    // 3. Format filter
+    if (selectedFormat !== 'All') {
+      if (r.format !== selectedFormat) {
+        return false;
+      }
+    }
+
+    // 4. Availability filter
+    if (selectedAvail === 'open') {
+      if (r.playerCount >= r.maxPlayers) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  const hasActiveFilters = Boolean(query || selectedSubj !== 'All' || selectedFormat !== 'All' || selectedAvail !== 'open');
+
+  if (summaryBox) {
+    if (hasActiveFilters && allPublicRoomsCache.length > 0) {
+      summaryBox.style.display = 'flex';
+      summaryBox.innerHTML = `
+        <span>Showing <b>${filtered.length}</b> of <b>${allPublicRoomsCache.length}</b> active lobbies</span>
+        <button type="button" class="btn-clear-filters" id="arenaResetFiltersBtn">Reset Filters ✕</button>
+      `;
+      const resetBtn = document.getElementById('arenaResetFiltersBtn');
+      if (resetBtn) resetBtn.addEventListener('click', resetAllLobbyFilters);
+    } else {
+      summaryBox.style.display = 'none';
+      summaryBox.innerHTML = '';
+    }
+  }
+
+  renderFilteredPublicLobbies(filtered);
+}
+
+function renderFilteredPublicLobbies(rooms) {
+  const container = document.getElementById('publicLobbiesList');
+  if (!container) return;
+
+  if (allPublicRoomsCache.length === 0) {
+    container.innerHTML = `
+      <div class="arena-empty-state">
+        <div class="arena-empty-icon">⏳</div>
+        <div class="arena-empty-title">Scanning for Battle Lobbies...</div>
+        <p class="arena-empty-desc">No public rooms found right now. Create one and host the first challenge!</p>
+        <button type="button" class="btn secondary" id="emptyCreateBtn">
+          ➕ Create Arena
+        </button>
+      </div>
+    `;
+    const btn = container.querySelector('#emptyCreateBtn');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const createTab = document.querySelector('button[data-arena-tab="create"]');
+        if (createTab) createTab.click();
+      });
+    }
+    return;
+  }
+
+  if (rooms.length === 0) {
+    container.innerHTML = `
+      <div class="arena-no-matches-box">
+        <div class="no-matches-icon">🔍</div>
+        <div class="no-matches-title">No matching battle lobbies found</div>
+        <p class="no-matches-desc">We couldn't find any public lobbies matching your current search or topic filter criteria. Try searching a different keyword or resetting filters.</p>
+        <div class="no-matches-actions">
+          <button type="button" class="btn secondary" id="noMatchesResetBtn">✕ Clear Filters</button>
+          <button type="button" class="btn" id="noMatchesCreateBtn">➕ Create Arena with this Topic</button>
+        </div>
+      </div>
+    `;
+    const resetBtn = container.querySelector('#noMatchesResetBtn');
+    if (resetBtn) resetBtn.addEventListener('click', resetAllLobbyFilters);
+    const createBtn = container.querySelector('#noMatchesCreateBtn');
+    if (createBtn) {
+      createBtn.addEventListener('click', () => {
+        const createTab = document.querySelector('button[data-arena-tab="create"]');
+        if (createTab) createTab.click();
+      });
+    }
+    return;
+  }
+
+  container.innerHTML = rooms.map(r => {
+    const isFull = r.playerCount >= r.maxPlayers;
+    const formatLabel = {
+      mix: 'Mixed Formats',
+      mcq: 'MCQ',
+      tf: 'True/False',
+      sata: 'SATA',
+      short: 'Short Answer'
+    }[r.format] || r.format;
+
+    return `
+      <div class="arena-lobby-item">
+        <div class="arena-lobby-main">
+          <div class="arena-lobby-title-row">
+            <span class="arena-lobby-code">ROOM #${r.id}</span>
+            <span class="arena-lobby-name">${r.name}</span>
+            <span class="arena-lobby-host">Host: <b>${r.hostName || 'Scholar'}</b></span>
+          </div>
+          <div class="arena-lobby-specs-row">
+            <span class="arena-lobby-chip">📚 ${r.subject}</span>
+            ${r.subtopic && r.subtopic !== 'All' ? `<span class="arena-lobby-chip">🎯 ${r.subtopic}</span>` : ''}
+            <span class="arena-lobby-chip">📋 ${formatLabel}</span>
+            <span class="arena-lobby-chip">🔢 ${r.count} Questions</span>
+            <span class="arena-lobby-chip">⏱️ ${r.timer > 0 ? (r.timer / 60) + ' min' : 'Untimed'}</span>
+          </div>
+        </div>
+        <div class="arena-lobby-right">
+          <div class="arena-lobby-capacity ${isFull ? 'full' : ''}">
+            👥 ${r.playerCount}/${r.maxPlayers} ${isFull ? '(Full)' : 'Slots'}
+          </div>
+          <button type="button" class="btn ${isFull ? 'secondary' : ''}" data-join-room="${r.id}" ${isFull ? 'disabled' : ''}>
+            ${isFull ? 'Full' : '⚔️ Join Match'}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('button[data-join-room]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const roomId = btn.dataset.joinRoom;
+      joinArenaRoom(roomId, null);
+    });
+  });
+}
+
+function renderPublicLobbies(rooms) {
+  handlePublicRoomsList(rooms);
+}
+
+function handleRoomEntered(data, isHost) {
+  currentArenaRoom = {
+    roomId: data.roomId,
+    isPrivate: data.isPrivate,
+    passcode: data.passcode,
+    maxPlayers: data.maxPlayers,
+    config: data.config,
+    players: data.players,
+    hostId: isHost ? arenaSocket.id : null,
+    isHost: isHost
+  };
+
+  // Switch Views
+  const mainLobby = document.getElementById('arenaMainLobby');
+  const activeRoom = document.getElementById('arenaRoomActive');
+  const waitingRoom = document.getElementById('arenaWaitingRoom');
+  const battleView = document.getElementById('arenaBattleView');
+  const resultsView = document.getElementById('arenaResultsView');
+
+  if (mainLobby) mainLobby.style.display = 'none';
+  if (activeRoom) activeRoom.style.display = 'block';
+  if (waitingRoom) waitingRoom.style.display = 'block';
+  if (battleView) battleView.style.display = 'none';
+  if (resultsView) resultsView.style.display = 'none';
+
+  // Badges
+  const codePill = document.getElementById('arRoomCode');
+  const visBadge = document.getElementById('arVisBadge');
+  const passBox = document.getElementById('arPasscodeBox');
+  const passVal = document.getElementById('arPasscodeVal');
+
+  if (codePill) codePill.textContent = `ROOM #${data.roomId}`;
+  if (visBadge) {
+    visBadge.textContent = data.isPrivate ? '🔒 Private' : '🌐 Public';
+    visBadge.style.color = data.isPrivate ? 'var(--gold)' : 'var(--green)';
+  }
+  if (passBox && passVal) {
+    if (data.isPrivate && data.passcode) {
+      passBox.style.display = 'inline-flex';
+      passVal.textContent = data.passcode;
+    } else {
+      passBox.style.display = 'none';
+    }
+  }
+
+  // Room Specs Chips
+  const specsRow = document.getElementById('arenaSpecsRow');
+  if (specsRow && data.config) {
+    const fLabel = { mix: 'Mix Formats', mcq: 'MCQ Only', tf: 'True/False', sata: 'SATA', short: 'Short Answer' }[data.config.format] || data.config.format;
+    specsRow.innerHTML = `
+      <span class="arena-spec-chip">📚 ${data.config.subject}${data.config.subtopic && data.config.subtopic !== 'All' ? ' · ' + data.config.subtopic : ''}</span>
+      <span class="arena-spec-chip">📋 ${fLabel}</span>
+      <span class="arena-spec-chip">🔢 ${data.config.count} Questions</span>
+      <span class="arena-spec-chip">⏱️ ${data.config.timer > 0 ? (data.config.timer / 60) + ' Min Match' : 'Untimed'}</span>
+      <span class="arena-spec-chip">👥 Max ${data.maxPlayers} Contenders</span>
+    `;
+  }
+
+  renderWaitingRoster(data.players, currentArenaRoom.hostId);
+}
+
+function renderWaitingRoster(players, hostId) {
+  const grid = document.getElementById('arenaRosterGrid');
+  const countEl = document.getElementById('arenaRosterCount');
+  const maxEl = document.getElementById('arenaRosterMax');
+  const statusMsg = document.getElementById('arenaStatusMsg');
+  const startBtn = document.getElementById('arenaStartBattleBtn');
+  const readyBtn = document.getElementById('arenaReadyToggleBtn');
+
+  if (!grid) return;
+
+  const myId = arenaSocket?.id;
+  const isHost = (hostId === myId);
+  const me = players.find(p => p.id === myId);
+
+  if (countEl) countEl.textContent = players.length;
+  if (maxEl && currentArenaRoom) maxEl.textContent = currentArenaRoom.maxPlayers;
+
+  grid.innerHTML = players.map(p => {
+    const isSelf = (p.id === myId);
+    const pIsHost = (p.id === hostId || p.isHost);
+    return `
+      <div class="arena-roster-card ${isSelf ? 'is-self' : ''}">
+        <div class="roster-avatar">${p.avatar || '🎓'}</div>
+        <div class="roster-info">
+          <div class="roster-name">${p.username} ${isSelf ? '(You)' : ''}</div>
+          <div class="roster-tag">${p.playerTag || ''}</div>
+          <div class="roster-badges">
+            ${pIsHost ? '<span class="host-crown">👑 Host</span>' : ''}
+            <span class="ready-pill ${p.isReady ? 'is-ready' : ''}">
+              ${p.isReady ? 'Ready ✨' : 'Waiting...'}
+            </span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Action Buttons & Status message
+  if (isHost) {
+    if (readyBtn) readyBtn.style.display = 'none';
+    if (startBtn) {
+      startBtn.style.display = 'inline-block';
+      startBtn.disabled = false;
+      startBtn.textContent = '🚀 Start Battle Now';
+    }
+    const readyCount = players.filter(p => p.isReady || p.isHost).length;
+    if (statusMsg) {
+      statusMsg.textContent = `👑 You are the Arena Host. Contenders ready: ${readyCount}/${players.length}. Start when ready!`;
+      statusMsg.style.color = 'var(--gold)';
+    }
+  } else {
+    if (startBtn) startBtn.style.display = 'none';
+    if (readyBtn) {
+      readyBtn.style.display = 'inline-block';
+      if (me && me.isReady) {
+        readyBtn.textContent = 'Cancel Ready ⏳';
+        readyBtn.classList.add('active');
+      } else {
+        readyBtn.textContent = 'Ready Up ✨';
+        readyBtn.classList.remove('active');
+      }
+    }
+    if (statusMsg) {
+      statusMsg.textContent = '⏳ Waiting for host to initiate the battle...';
+      statusMsg.style.color = 'var(--ink-soft)';
+    }
+  }
+}
+
+function startBattlePhase() {
+  const waitingRoom = document.getElementById('arenaWaitingRoom');
+  const battleView = document.getElementById('arenaBattleView');
+  const resultsView = document.getElementById('arenaResultsView');
+
+  if (waitingRoom) waitingRoom.style.display = 'none';
+  if (resultsView) resultsView.style.display = 'none';
+  if (battleView) battleView.style.display = 'block';
+
+  // Disable AI Coach during multiplayer arena battle
+  if (typeof window.setArenaBattleCoachLock === 'function') {
+    window.setArenaBattleCoachLock(true);
+  }
+
+  renderScoreboardTrack(currentArenaRoom?.players || []);
+
+  const timerVal = currentArenaRoom?.config?.timer || 180;
+  if (timerVal > 0) {
+    startArenaTimer(timerVal);
+  } else {
+    const timerBox = document.getElementById('arenaTimerBox');
+    if (timerBox) timerBox.innerHTML = `<span>⏳ Relaxed Mode</span>`;
+  }
+
+  currentArenaQIndex = 0;
+  renderCurrentArenaQuestion();
+}
+
+function startArenaTimer(totalSeconds) {
+  clearInterval(arenaTimerInterval);
+  let remaining = totalSeconds;
+  const timeEl = document.getElementById('arenaTimeRemaining');
+  const timerBox = document.getElementById('arenaTimerBox');
+
+  function update() {
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    if (timeEl) timeEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    if (timerBox) {
+      if (remaining <= 30) {
+        timerBox.classList.add('urgent');
+      } else {
+        timerBox.classList.remove('urgent');
+      }
+    }
+
+    if (remaining <= 0) {
+      clearInterval(arenaTimerInterval);
+      // Auto submit current question as timeout and complete
+      if (currentArenaRoom && arenaSocket) {
+        arenaSocket.emit('submit-answer', {
+          roomId: currentArenaRoom.roomId,
+          qIndex: currentArenaQuestions.length - 1,
+          isCorrect: false,
+          answerTime: 999
+        });
+      }
+    }
+    remaining--;
+  }
+
+  update();
+  arenaTimerInterval = setInterval(update, 1000);
+}
+
+function renderScoreboardTrack(players) {
+  const track = document.getElementById('arenaScoreboardTrack');
+  if (!track || !players || players.length === 0) return;
+
+  const totalQuestions = currentArenaQuestions.length || currentArenaRoom?.config?.count || 5;
+  const highestScore = Math.max(...players.map(p => p.score || 0));
+
+  track.innerHTML = players.map(p => {
+    const pct = Math.min(100, Math.round(((p.progress || 0) / totalQuestions) * 100));
+    const isLead = (p.score === highestScore && highestScore > 0);
+    return `
+      <div class="race-track-row ${isLead ? 'is-lead' : ''}">
+        <div class="race-player-info">
+          <div class="race-avatar">${p.avatar || '🎓'}</div>
+          <div class="race-name" title="${p.username}">${p.username} ${isLead ? '👑' : ''}</div>
+        </div>
+        <div class="race-bar-wrap">
+          <div class="race-bar-fill" style="width: ${pct}%;"></div>
+        </div>
+        <div class="race-score-pill">${p.score || 0} pts</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCurrentArenaQuestion() {
+  if (!currentArenaQuestions || currentArenaQuestions.length === 0) return;
+
+  if (currentArenaQIndex >= currentArenaQuestions.length) {
+    const card = document.getElementById('arenaQuestionCard');
+    if (card) {
+      card.innerHTML = `
+        <div style="text-align:center; padding:30px;">
+          <div style="font-size:36px; margin-bottom:12px;">🏁</div>
+          <h3 style="font-family:'Playfair Display', serif; font-size:20px; color:var(--ink);">All Questions Completed!</h3>
+          <p style="color:var(--ink-soft); font-size:14px; margin-top:6px;">Waiting for other combatants to cross the finish line...</p>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  const q = currentArenaQuestions[currentArenaQIndex];
+  arenaQStartTime = Date.now();
+
+  const counterEl = document.getElementById('arenaQCounter');
+  const topicBadge = document.getElementById('arenaQTopicBadge');
+  const qText = document.getElementById('arenaQText');
+  const qOptions = document.getElementById('arenaQOptions');
+  const qFeedback = document.getElementById('arenaQFeedback');
+
+  if (counterEl) counterEl.textContent = `Question ${currentArenaQIndex + 1} / ${currentArenaQuestions.length}`;
+  if (topicBadge) topicBadge.textContent = `${q.topic || 'General'}${q.sub ? ' · ' + q.sub : ''}`;
+  if (qText) qText.innerHTML = q.q || '';
+  if (qFeedback) {
+    qFeedback.style.display = 'none';
+    qFeedback.innerHTML = '';
+    qFeedback.className = 'arena-q-feedback';
+  }
+
+  const format = q.type || 'mcq';
+  const letters = ['A', 'B', 'C', 'D'];
+
+  if (format === 'mcq' || format === 'tf') {
+    const opts = q.o || (format === 'tf' ? ['True', 'False'] : []);
+    qOptions.innerHTML = opts.map((opt, i) => `
+      <button type="button" class="arena-opt-btn" data-opt-idx="${i}" data-opt-val="${encodeURIComponent(opt)}">
+        <span class="arena-opt-key">${letters[i] || (i+1)}</span>
+        <span>${opt}</span>
+      </button>
+    `).join('');
+
+    qOptions.querySelectorAll('button[data-opt-val]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = decodeURIComponent(btn.dataset.optVal);
+        handleArenaOptionSelected(val, btn);
+      });
+    });
+  } else if (format === 'sata') {
+    const opts = q.o || [];
+    let sataHTML = opts.map((opt, i) => `
+      <button type="button" class="arena-opt-btn arena-sata-btn" data-opt-val="${encodeURIComponent(opt)}">
+        <span class="arena-opt-key">☐</span>
+        <span>${opt}</span>
+      </button>
+    `).join('');
+    sataHTML += `
+      <div style="margin-top:10px; display:flex; justify-content:flex-end;">
+        <button type="button" class="btn" id="arenaSataSubmitBtn">Submit Selection</button>
+      </div>
+    `;
+    qOptions.innerHTML = sataHTML;
+
+    const selectedSet = new Set();
+    qOptions.querySelectorAll('.arena-sata-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = decodeURIComponent(btn.dataset.optVal);
+        if (selectedSet.has(val)) {
+          selectedSet.delete(val);
+          btn.classList.remove('selected');
+          btn.querySelector('.arena-opt-key').textContent = '☐';
+        } else {
+          selectedSet.add(val);
+          btn.classList.add('selected');
+          btn.querySelector('.arena-opt-key').textContent = '☑';
+        }
+      });
+    });
+
+    const submitBtn = document.getElementById('arenaSataSubmitBtn');
+    if (submitBtn) {
+      submitBtn.addEventListener('click', () => {
+        handleArenaSataSelected(Array.from(selectedSet));
+      });
+    }
+  } else if (format === 'short') {
+    qOptions.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <input type="text" id="arenaShortInput" placeholder="Type your answer here..." class="arena-big-input" style="font-size:16px; text-align:left; letter-spacing:normal;">
+        <div style="display:flex; justify-content:flex-end;">
+          <button type="button" class="btn" id="arenaShortSubmitBtn">Submit Answer</button>
+        </div>
+      </div>
+    `;
+
+    const input = document.getElementById('arenaShortInput');
+    const submitBtn = document.getElementById('arenaShortSubmitBtn');
+    function submitShort() {
+      const val = (input?.value || '').trim();
+      if (!val) return;
+      handleArenaShortSelected(val);
+    }
+    if (submitBtn) submitBtn.addEventListener('click', submitShort);
+    if (input) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitShort();
+      });
+      setTimeout(() => input.focus(), 100);
+    }
+  }
+
+  // Typeset MathJax if available
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    window.MathJax.typesetPromise([qText, qOptions]).catch(err => console.log(err));
+  }
+}
+
+function handleArenaOptionSelected(selectedVal, clickedBtn) {
+  const q = currentArenaQuestions[currentArenaQIndex];
+  const allBtns = document.querySelectorAll('.arena-opt-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  const answerTime = Math.round((Date.now() - arenaQStartTime) / 1000);
+  const correctVal = String(q.a || '').trim();
+  const isCorrect = (String(selectedVal || '').trim().toLowerCase() === correctVal.toLowerCase());
+
+  if (clickedBtn) {
+    clickedBtn.classList.add(isCorrect ? 'correct' : 'wrong');
+  }
+
+  allBtns.forEach(b => {
+    const val = decodeURIComponent(b.dataset.optVal || '');
+    if (val.trim().toLowerCase() === correctVal.toLowerCase()) {
+      b.classList.add('correct');
+    }
+  });
+
+  showArenaFeedback(isCorrect, q.e);
+
+  if (arenaSocket && currentArenaRoom) {
+    arenaSocket.emit('submit-answer', {
+      roomId: currentArenaRoom.roomId,
+      qIndex: currentArenaQIndex,
+      isCorrect,
+      answerTime
+    });
+  }
+
+  setTimeout(() => {
+    currentArenaQIndex++;
+    renderCurrentArenaQuestion();
+  }, 1300);
+}
+
+function handleArenaSataSelected(selectedList) {
+  const q = currentArenaQuestions[currentArenaQIndex];
+  const submitBtn = document.getElementById('arenaSataSubmitBtn');
+  if (submitBtn) submitBtn.disabled = true;
+
+  const answerTime = Math.round((Date.now() - arenaQStartTime) / 1000);
+  const correctSet = new Set(Array.isArray(q.a) ? q.a : [q.a]);
+  const userSet = new Set(selectedList);
+
+  let isCorrect = (userSet.size === correctSet.size);
+  if (isCorrect) {
+    for (const val of userSet) {
+      if (!correctSet.has(val)) {
+        isCorrect = false;
+        break;
+      }
+    }
+  }
+
+  showArenaFeedback(isCorrect, q.e);
+
+  if (arenaSocket && currentArenaRoom) {
+    arenaSocket.emit('submit-answer', {
+      roomId: currentArenaRoom.roomId,
+      qIndex: currentArenaQIndex,
+      isCorrect,
+      answerTime
+    });
+  }
+
+  setTimeout(() => {
+    currentArenaQIndex++;
+    renderCurrentArenaQuestion();
+  }, 1400);
+}
+
+function handleArenaShortSelected(userText) {
+  const q = currentArenaQuestions[currentArenaQIndex];
+  const submitBtn = document.getElementById('arenaShortSubmitBtn');
+  if (submitBtn) submitBtn.disabled = true;
+
+  const answerTime = Math.round((Date.now() - arenaQStartTime) / 1000);
+  const idealAnswer = String(q.a || '').toLowerCase().trim();
+  const given = userText.toLowerCase().trim();
+
+  const isCorrect = (given.includes(idealAnswer) || idealAnswer.includes(given));
+
+  showArenaFeedback(isCorrect, `${q.e || ''} (Correct answer: ${q.a})`);
+
+  if (arenaSocket && currentArenaRoom) {
+    arenaSocket.emit('submit-answer', {
+      roomId: currentArenaRoom.roomId,
+      qIndex: currentArenaQIndex,
+      isCorrect,
+      answerTime
+    });
+  }
+
+  setTimeout(() => {
+    currentArenaQIndex++;
+    renderCurrentArenaQuestion();
+  }, 1400);
+}
+
+function showArenaFeedback(isCorrect, explanation) {
+  const box = document.getElementById('arenaQFeedback');
+  if (!box) return;
+
+  box.style.display = 'block';
+  box.className = `arena-q-feedback ${isCorrect ? 'correct' : 'wrong'}`;
+  box.innerHTML = `
+    <b>${isCorrect ? '✓ Correct! (+Points)' : '✗ Incorrect'}</b>
+    ${explanation ? `<div style="margin-top:4px;">${explanation}</div>` : ''}
+  `;
+}
+
+function endBattlePhase(rankings, roomConfig) {
+  clearInterval(arenaTimerInterval);
+
+  // Re-enable AI Coach when arena battle ends
+  if (typeof window.setArenaBattleCoachLock === 'function') {
+    window.setArenaBattleCoachLock(false);
+  }
+
+  const battleView = document.getElementById('arenaBattleView');
+  const resultsView = document.getElementById('arenaResultsView');
+  const waitingRoom = document.getElementById('arenaWaitingRoom');
+
+  if (battleView) battleView.style.display = 'none';
+  if (waitingRoom) waitingRoom.style.display = 'none';
+  if (resultsView) {
+    resultsView.style.display = 'block';
+    setTimeout(() => {
+      resultsView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  renderArenaPodium(rankings);
+  renderArenaLeaderboard(rankings);
+
+  // Award local XP
+  const myId = arenaSocket?.id;
+  const myRecord = rankings.find(r => r.id === myId);
+  const award = myRecord ? (myRecord.xpAwarded || myRecord.xpBonus || 150) : 100;
+  xp = (xp || 0) + award;
+  const xpDisplay = document.getElementById('headerXpVal') || document.getElementById('xpVal');
+  if (xpDisplay) xpDisplay.textContent = xp;
+  if (typeof saveProgress === 'function') saveProgress();
+
+  // Rematch button (Host only)
+  const rematchBtn = document.getElementById('arenaRematchBtn');
+  const isHost = currentArenaRoom?.isHost;
+  if (rematchBtn) {
+    rematchBtn.style.display = isHost ? 'inline-block' : 'none';
+  }
+}
+
+function renderArenaPodium(rankings) {
+  const container = document.getElementById('arenaPodium');
+  if (!container) return;
+
+  const first = rankings[0] || null;
+  const second = rankings[1] || null;
+  const third = rankings[2] || null;
+
+  container.innerHTML = `
+    <!-- 2nd Place Silver -->
+    <div class="podium-place second">
+      ${second ? `
+        <div class="podium-avatar-wrap">
+          <div class="podium-avatar">${second.avatar || '🥈'}</div>
+          <div class="podium-user-name" title="${second.username}">${second.username}</div>
+          <div class="podium-user-score">${second.score} pts</div>
+        </div>
+        <div class="podium-pillar">
+          <span class="podium-medal">🥈</span>
+          <span class="podium-rank-text">2</span>
+        </div>
+      ` : '<div style="height:130px; width:100%;"></div>'}
+    </div>
+
+    <!-- 1st Place Gold -->
+    <div class="podium-place first">
+      ${first ? `
+        <div class="podium-avatar-wrap">
+          <span class="podium-crown">👑</span>
+          <div class="podium-avatar">${first.avatar || '🥇'}</div>
+          <div class="podium-user-name" title="${first.username}">${first.username}</div>
+          <div class="podium-user-score">${first.score} pts</div>
+        </div>
+        <div class="podium-pillar">
+          <span class="podium-medal">🥇</span>
+          <span class="podium-rank-text">1</span>
+        </div>
+      ` : '<div style="height:170px; width:100%;"></div>'}
+    </div>
+
+    <!-- 3rd Place Bronze -->
+    <div class="podium-place third">
+      ${third ? `
+        <div class="podium-avatar-wrap">
+          <div class="podium-avatar">${third.avatar || '🥉'}</div>
+          <div class="podium-user-name" title="${third.username}">${third.username}</div>
+          <div class="podium-user-score">${third.score} pts</div>
+        </div>
+        <div class="podium-pillar">
+          <span class="podium-medal">🥉</span>
+          <span class="podium-rank-text">3</span>
+        </div>
+      ` : '<div style="height:100px; width:100%;"></div>'}
+    </div>
+  `;
+}
+
+function renderArenaLeaderboard(rankings) {
+  const tbody = document.getElementById('arenaLeaderboardBody');
+  if (!tbody || !rankings) return;
+
+  const myId = arenaSocket?.id;
+
+  tbody.innerHTML = rankings.map(r => {
+    const isSelf = (r.id === myId);
+    const timeFormatted = r.finishTime ? `${(r.finishTime / 1000).toFixed(1)}s` : 'Timed Out';
+    const rankClass = r.rank === 1 ? 'rank-1' : (r.rank === 2 ? 'rank-2' : (r.rank === 3 ? 'rank-3' : ''));
+
+    return `
+      <tr class="${isSelf ? 'is-self' : ''}">
+        <td>
+          <span class="rank-badge ${rankClass}">#${r.rank}</span>
+        </td>
+        <td>
+          <b>${r.username}</b> <span style="font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--gold);">${r.playerTag}</span> ${isSelf ? '🌟' : ''}
+        </td>
+        <td style="font-family:'IBM Plex Mono', monospace; font-weight:700;">${r.score}</td>
+        <td>${r.accuracy || 0}%</td>
+        <td style="font-family:'IBM Plex Mono', monospace; font-size:12px;">${timeFormatted}</td>
+        <td style="font-weight:700; color:var(--gold);">+${r.xpAwarded || r.xpBonus || (r.rank === 1 ? 150 : (r.rank === 2 ? 100 : (r.rank === 3 ? 75 : 50)))} XP</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function resetToWaitingRoom() {
+  if (typeof window.setArenaBattleCoachLock === 'function') {
+    window.setArenaBattleCoachLock(false);
+  }
+
+  const waitingRoom = document.getElementById('arenaWaitingRoom');
+  const battleView = document.getElementById('arenaBattleView');
+  const resultsView = document.getElementById('arenaResultsView');
+
+  if (waitingRoom) waitingRoom.style.display = 'block';
+  if (battleView) battleView.style.display = 'none';
+  if (resultsView) resultsView.style.display = 'none';
+
+  if (currentArenaRoom) {
+    renderWaitingRoster(currentArenaRoom.players, currentArenaRoom.hostId);
+  }
+}
+
+function leaveArenaRoom() {
+  if (typeof window.setArenaBattleCoachLock === 'function') {
+    window.setArenaBattleCoachLock(false);
+  }
+
+  if (arenaSocket && currentArenaRoom) {
+    arenaSocket.emit('leave-room', { roomId: currentArenaRoom.roomId });
+  }
+  currentArenaRoom = null;
+  clearInterval(arenaTimerInterval);
+
+  const mainLobby = document.getElementById('arenaMainLobby');
+  const activeRoom = document.getElementById('arenaRoomActive');
+  if (mainLobby) mainLobby.style.display = 'block';
+  if (activeRoom) activeRoom.style.display = 'none';
+
+  fetchPublicLobbies();
+}
+
+function joinArenaRoom(roomId, passcode) {
+  ensureArenaSocket();
+  if (!arenaSocket) return;
+
+  const playerInfo = {
+    username: currentUser || 'Scholar',
+    playerTag: getScholarPlayerTag(),
+    avatar: getScholarAvatar()
+  };
+
+  const errorBox = document.getElementById('arenaPrivateError');
+  if (errorBox) errorBox.style.display = 'none';
+
+  arenaSocket.emit('join-room', {
+    roomId: roomId.toString().trim(),
+    passcode: passcode ? passcode.toString().trim() : null,
+    playerInfo
+  });
+}
+
+function createArenaRoom() {
+  ensureArenaSocket();
+  if (!arenaSocket) return;
+
+  const visRadio = document.querySelector('input[name="arenaVisibility"]:checked');
+  const isPrivate = (visRadio?.value === 'private');
+
+  const subject = document.getElementById('arenaSubjectSelect')?.value || 'All';
+  const subtopic = document.getElementById('arenaTopicSelect')?.value || 'All';
+  const format = document.getElementById('arenaFormatSelect')?.value || 'mix';
+  const count = parseInt(document.getElementById('arenaCountSelect')?.value) || 5;
+  const timer = parseInt(document.getElementById('arenaTimerSelect')?.value) || 180;
+  const maxPlayers = parseInt(document.getElementById('arenaMaxPlayersSelect')?.value) || 4;
+
+  const playerInfo = {
+    username: currentUser || 'Scholar',
+    playerTag: getScholarPlayerTag(),
+    avatar: getScholarAvatar()
+  };
+
+  arenaSocket.emit('create-room', {
+    isPrivate,
+    maxPlayers,
+    config: { subject, subtopic, format, count, timer },
+    playerInfo
+  });
+}
+
+function bindArenaActionButtons() {
+  // Launch Room Button
+  const launchBtn = document.getElementById('arenaLaunchBtn');
+  if (launchBtn && !launchBtn.dataset.bound) {
+    launchBtn.dataset.bound = 'true';
+    launchBtn.addEventListener('click', createArenaRoom);
+  }
+
+  // Refresh Public Lobbies Button
+  const refreshBtn = document.getElementById('refreshPublicRoomsBtn');
+  if (refreshBtn && !refreshBtn.dataset.bound) {
+    refreshBtn.dataset.bound = 'true';
+    refreshBtn.addEventListener('click', () => {
+      fetchPublicLobbies();
+    });
+  }
+
+  // Join Private Room Button
+  const joinPrivateBtn = document.getElementById('arenaJoinPrivateBtn');
+  if (joinPrivateBtn && !joinPrivateBtn.dataset.bound) {
+    joinPrivateBtn.dataset.bound = 'true';
+    joinPrivateBtn.addEventListener('click', () => {
+      const code = document.getElementById('privateRoomCode')?.value;
+      const passcode = document.getElementById('privateRoomPasscode')?.value;
+      const errorBox = document.getElementById('arenaPrivateError');
+
+      if (!code || !passcode) {
+        if (errorBox) {
+          errorBox.textContent = 'Please enter both the 4-digit Room Code and 6-digit PIN.';
+          errorBox.style.display = 'block';
+        }
+        return;
+      }
+      joinArenaRoom(code, passcode);
+    });
+  }
+
+  // Copy Passcode in Waiting Room
+  const copyPassBtn = document.getElementById('copyPasscodeBtn');
+  if (copyPassBtn && !copyPassBtn.dataset.bound) {
+    copyPassBtn.dataset.bound = 'true';
+    copyPassBtn.addEventListener('click', () => {
+      const pass = currentArenaRoom?.passcode;
+      if (!pass) return;
+      navigator.clipboard.writeText(pass).then(() => {
+        copyPassBtn.textContent = '✓';
+        setTimeout(() => copyPassBtn.textContent = '📋', 1500);
+      }).catch(() => {
+        prompt('Secret Passcode:', pass);
+      });
+    });
+  }
+
+  // Leave Room Button
+  const leaveBtn = document.getElementById('arenaLeaveRoomBtn');
+  if (leaveBtn && !leaveBtn.dataset.bound) {
+    leaveBtn.dataset.bound = 'true';
+    leaveBtn.addEventListener('click', leaveArenaRoom);
+  }
+
+  // Ready Toggle Button
+  const readyBtn = document.getElementById('arenaReadyToggleBtn');
+  if (readyBtn && !readyBtn.dataset.bound) {
+    readyBtn.dataset.bound = 'true';
+    readyBtn.addEventListener('click', () => {
+      if (arenaSocket && currentArenaRoom) {
+        arenaSocket.emit('toggle-ready', { roomId: currentArenaRoom.roomId });
+      }
+    });
+  }
+
+  // Start Battle Button (Host)
+  const startBtn = document.getElementById('arenaStartBattleBtn');
+  if (startBtn && !startBtn.dataset.bound) {
+    startBtn.dataset.bound = 'true';
+    startBtn.addEventListener('click', () => {
+      if (arenaSocket && currentArenaRoom) {
+        startBtn.disabled = true;
+        startBtn.textContent = '⏳ Preparing Arena...';
+        arenaSocket.emit('start-battle', { roomId: currentArenaRoom.roomId });
+      }
+    });
+  }
+
+  // Return to Lobby Button
+  const returnBtn = document.getElementById('arenaReturnLobbyBtn');
+  if (returnBtn && !returnBtn.dataset.bound) {
+    returnBtn.dataset.bound = 'true';
+    returnBtn.addEventListener('click', leaveArenaRoom);
+  }
+
+  // Rematch Button
+  const rematchBtn = document.getElementById('arenaRematchBtn');
+  if (rematchBtn && !rematchBtn.dataset.bound) {
+    rematchBtn.dataset.bound = 'true';
+    rematchBtn.addEventListener('click', () => {
+      if (arenaSocket && currentArenaRoom) {
+        arenaSocket.emit('rematch-battle', { roomId: currentArenaRoom.roomId });
+      }
+    });
+  }
+}
+
+function initArena() {
+  initArenaIdentity();
+  setupArenaTabs();
+  populateArenaSubjectsAndTopics();
+  setupPublicLobbiesSearchAndFilters();
+  setupArenaVisibilityPicker();
+  bindArenaActionButtons();
+  ensureArenaSocket();
+  fetchPublicLobbies();
+}
+
+window.initArena = initArena;

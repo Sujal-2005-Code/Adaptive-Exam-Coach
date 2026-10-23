@@ -3657,3 +3657,1214 @@ table.hist tr:last-child td{ border-bottom:none; }
   font-family: 'IBM Plex Sans', sans-serif; font-size: 14px;
 }
 .auth-input:focus { outline: 2px solid var(--gold); }
+
+/* ==========================================================================
+   MULTIPLAYER ARENA 2.0 - FULL DESIGN SYSTEM & COMPONENT STYLING
+   ========================================================================== */
+
+/* Scholar Identity Bar */
+.arena-player-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.arena-player-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.arena-player-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(180, 128, 31, 0.2), rgba(180, 128, 31, 0.05));
+  border: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 2px 8px rgba(180, 128, 31, 0.25);
+  flex-shrink: 0;
+}
+.arena-player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.arena-player-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.arena-player-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.arena-player-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(180, 128, 31, 0.12);
+  border: 1px solid rgba(180, 128, 31, 0.3);
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+}
+.btn-copy-tag {
+  background: var(--paper-2);
+  border: 1px solid var(--card-border);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-copy-tag:hover {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+.arena-player-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.arena-stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(63, 122, 78, 0.12);
+  border: 1.5px solid rgba(63, 122, 78, 0.3);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+}
+.arena-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulseDot 2s infinite;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* Arena Lobby Tabs Navigation */
+.arena-tabs-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--card-border);
+  padding-bottom: 12px;
+  overflow-x: auto;
+}
+.arena-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+  color: var(--ink-soft);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+}
+.arena-tab-btn:hover {
+  background: var(--paper-2);
+  color: var(--ink);
+  border-color: var(--gold);
+}
+.arena-tab-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+:root.dark .arena-tab-btn.active {
+  background: var(--gold);
+  color: #1a1508;
+  border-color: var(--gold);
+}
+
+/* Public Lobbies Browser */
+.arena-lobbies-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.arena-lobbies-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.arena-lobbies-sub {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.arena-lobbies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 180px;
+}
+.arena-lobby-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: var(--paper-2);
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.25s ease;
+}
+.arena-lobby-item:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px var(--shadow);
+}
+.arena-lobby-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.arena-lobby-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.arena-lobby-code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--gold);
+  background: rgba(180, 128, 31, 0.12);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(180, 128, 31, 0.3);
+}
+.arena-lobby-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.arena-lobby-specs-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.arena-lobby-chip {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+.arena-lobby-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.arena-lobby-capacity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--card);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+}
+.arena-lobby-capacity.full {
+  color: var(--red-soft);
+  border-color: rgba(181, 56, 44, 0.3);
+}
+
+/* Empty State */
+.arena-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--paper-2);
+  border: 2px dashed var(--card-border);
+  border-radius: 14px;
+}
+.arena-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+.arena-empty-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.arena-empty-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  max-width: 420px;
+  margin-bottom: 18px;
+}
+
+/* Arena Configuration Form */
+.arena-create-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+.arena-field-full {
+  grid-column: 1 / -1;
+}
+.arena-visibility-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 6px;
+}
+.visibility-option {
+  cursor: pointer;
+}
+.vis-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--paper-2);
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.22s ease;
+  height: 100%;
+}
+.visibility-option:hover .vis-card {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+}
+.visibility-option.active .vis-card {
+  background: rgba(180, 128, 31, 0.08);
+  border-color: var(--gold);
+  box-shadow: 0 4px 12px rgba(180, 128, 31, 0.18);
+}
+.vis-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.vis-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.vis-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.vis-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.35;
+}
+.arena-create-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* Private Passcode Unlock Form */
+.arena-passcode-form {
+  max-width: 500px;
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.arena-code-input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.passcode-input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.arena-big-input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: 2px solid var(--card-border);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.1em;
+  transition: border-color 0.2s ease;
+}
+.arena-big-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  background: var(--card);
+}
+.arena-error-box {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(181, 56, 44, 0.1);
+  border: 1.5px solid rgba(181, 56, 44, 0.3);
+  color: var(--red-soft);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Active Room: Waiting Room Lobby */
+.arena-room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--card-border);
+  margin-bottom: 20px;
+}
+.arena-room-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.arena-code-pill {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--gold);
+  background: rgba(180, 128, 31, 0.14);
+  border: 1.5px solid rgba(180, 128, 31, 0.35);
+  padding: 5px 12px;
+  border-radius: 8px;
+  letter-spacing: 0.08em;
+}
+.arena-visibility-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: var(--paper-2);
+  border: 1.5px solid var(--card-border);
+  color: var(--ink);
+}
+.arena-passcode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: rgba(63, 122, 78, 0.12);
+  border: 1.5px solid rgba(63, 122, 78, 0.3);
+  color: var(--green);
+}
+.arena-passcode-pill b {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+}
+.copy-passcode-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+.copy-passcode-btn:hover {
+  transform: scale(1.2);
+}
+.arena-specs-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.arena-spec-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--paper-2);
+  border: 1px solid var(--card-border);
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+.arena-roster-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+.arena-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.arena-roster-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--paper-2);
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  padding: 14px;
+  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.arena-roster-card.is-self {
+  border-color: var(--gold);
+  background: rgba(180, 128, 31, 0.06);
+}
+.roster-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.roster-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+.roster-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.roster-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--gold);
+}
+.roster-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.host-crown {
+  font-size: 12px;
+  background: rgba(180, 128, 31, 0.15);
+  border: 1px solid rgba(180, 128, 31, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--gold);
+  font-weight: 700;
+}
+.ready-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--card-border);
+  color: var(--ink-soft);
+}
+.ready-pill.is-ready {
+  background: rgba(63, 122, 78, 0.15);
+  border: 1px solid rgba(63, 122, 78, 0.3);
+  color: var(--green);
+}
+
+.arena-waiting-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-top: 18px;
+  border-top: 2px solid var(--card-border);
+}
+.arena-status-msg {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.arena-lobby-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Active Room: Live Battle View */
+.arena-battle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.arena-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--paper-2);
+  border: 2px solid var(--card-border);
+  padding: 6px 16px;
+  border-radius: 20px;
+  color: var(--ink);
+  transition: all 0.3s ease;
+}
+.arena-timer-pill.urgent {
+  background: rgba(181, 56, 44, 0.12);
+  border-color: var(--red-soft);
+  color: var(--red-soft);
+  animation: pulseTimer 1s infinite;
+}
+@keyframes pulseTimer {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.arena-q-counter {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Scoreboard Race Track */
+.arena-scoreboard-track {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--paper-2);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+.race-track-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 90px;
+  align-items: center;
+  gap: 14px;
+}
+.race-player-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+.race-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.race-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.race-bar-wrap {
+  position: relative;
+  height: 12px;
+  background: var(--card);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+}
+.race-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--gold), #d4af37);
+  transition: width 0.4s ease;
+}
+.race-track-row.is-lead .race-bar-fill {
+  background: linear-gradient(90deg, var(--green), #5ab871);
+}
+.race-score-pill {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* Active Question Card */
+.arena-quiz-card {
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 6px 18px var(--shadow);
+}
+.arena-q-topic-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: rgba(180, 128, 31, 0.12);
+  border: 1px solid rgba(180, 128, 31, 0.25);
+  padding: 3px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.arena-q-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+.arena-q-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.arena-opt-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--paper-2);
+  border: 2px solid var(--card-border);
+  border-radius: 10px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+.arena-opt-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  background: var(--card);
+  transform: translateX(4px);
+}
+.arena-opt-btn.selected {
+  border-color: var(--gold);
+  background: rgba(180, 128, 31, 0.1);
+  font-weight: 600;
+}
+.arena-opt-btn.correct {
+  border-color: var(--green) !important;
+  background: rgba(63, 122, 78, 0.15) !important;
+  color: var(--green) !important;
+}
+.arena-opt-btn.wrong {
+  border-color: var(--red-soft) !important;
+  background: rgba(181, 56, 44, 0.15) !important;
+  color: var(--red-soft) !important;
+}
+.arena-opt-key {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.arena-opt-btn.correct .arena-opt-key {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+.arena-opt-btn.wrong .arena-opt-key {
+  background: var(--red-soft);
+  color: #fff;
+  border-color: var(--red-soft);
+}
+.arena-q-feedback {
+  margin-top: 18px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  border: 1.5px solid transparent;
+}
+.arena-q-feedback.correct {
+  background: rgba(63, 122, 78, 0.1);
+  border-color: rgba(63, 122, 78, 0.3);
+  color: var(--green);
+}
+.arena-q-feedback.wrong {
+  background: rgba(181, 56, 44, 0.1);
+  border-color: rgba(181, 56, 44, 0.3);
+  color: var(--red-soft);
+}
+
+/* Active Room: Battle Results & 3D Podium */
+.arena-results-hero {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.arena-trophy-icon {
+  font-size: 52px;
+  margin-bottom: 8px;
+  animation: floatTrophy 2.5s ease-in-out infinite;
+}
+@keyframes floatTrophy {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.arena-results-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.arena-results-sub {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* 3D Visual Podium */
+.arena-podium-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  margin: 30px auto 40px auto;
+  max-width: 580px;
+  padding: 0 10px;
+}
+.podium-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+.podium-avatar-wrap {
+  position: relative;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.podium-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 12px var(--shadow);
+}
+.podium-crown {
+  position: absolute;
+  top: -16px;
+  font-size: 20px;
+}
+.podium-user-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 6px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+.podium-user-score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.podium-pillar {
+  width: 100%;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border: 2px solid transparent;
+}
+.podium-rank-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+.podium-medal {
+  font-size: 20px;
+}
+
+/* 1st Place Gold */
+.podium-place.first .podium-pillar {
+  height: 170px;
+  background: linear-gradient(180deg, rgba(230, 185, 80, 0.35), rgba(200, 150, 45, 0.15));
+  border-color: var(--gold);
+}
+.podium-place.first .podium-avatar {
+  border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(230, 185, 80, 0.4);
+}
+.podium-place.first .podium-rank-text {
+  color: var(--gold);
+}
+
+/* 2nd Place Silver */
+.podium-place.second .podium-pillar {
+  height: 130px;
+  background: linear-gradient(180deg, rgba(160, 175, 195, 0.35), rgba(130, 145, 165, 0.15));
+  border-color: #8c9ba5;
+}
+.podium-place.second .podium-avatar {
+  border-color: #8c9ba5;
+}
+.podium-place.second .podium-rank-text {
+  color: #718096;
+}
+
+/* 3rd Place Bronze */
+.podium-place.third .podium-pillar {
+  height: 100px;
+  background: linear-gradient(180deg, rgba(205, 127, 50, 0.3), rgba(165, 95, 30, 0.12));
+  border-color: #b07238;
+}
+.podium-place.third .podium-avatar {
+  border-color: #b07238;
+}
+.podium-place.third .podium-rank-text {
+  color: #b07238;
+}
+
+/* Ranked Standings Table */
+.arena-leaderboard-card {
+  background: var(--paper-2);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.leaderboard-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+.arena-table-wrap {
+  overflow-x: auto;
+}
+.arena-leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.arena-leaderboard-table th {
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  border-bottom: 2px solid var(--card-border);
+}
+.arena-leaderboard-table td {
+  padding: 14px;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--card-border);
+  color: var(--ink);
+}
+.arena-leaderboard-table tr:last-child td {
+  border-bottom: none;
+}
+.arena-leaderboard-table tr.is-self {
+  background: rgba(180, 128, 31, 0.08);
+}
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+}
+.rank-badge.rank-1 {
+  background: rgba(180, 128, 31, 0.2);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.rank-badge.rank-2 {
+  background: rgba(140, 155, 165, 0.2);
+  border-color: #8c9ba5;
+  color: #718096;
+}
+.rank-badge.rank-3 {
+  background: rgba(176, 114, 56, 0.2);
+  border-color: #b07238;
+  color: #b07238;
+}
+
+.arena-results-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* Arena Dynamic Syllabus Badge */
+.arena-syllabus-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(180, 128, 31, 0.12);
+  border: 1px solid rgba(180, 128, 31, 0.3);
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-left: 8px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Public Lobbies Filter & Search Toolbar */
+.arena-filter-bar {
+  background: var(--paper-2);
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.arena-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.arena-search-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 14px;
+  pointer-events: none;
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
+.arena-search-input {
+  width: 100%;
+  padding: 11px 36px 11px 40px;
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+  border-radius: 8px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.arena-search-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(180, 128, 31, 0.15);
+}
+.arena-search-clear {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 50%;
+  transition: color 0.15s ease;
+}
+.arena-search-clear:hover {
+  color: var(--red-soft);
+}
+.arena-filter-chips {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.arena-filter-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1.5px solid var(--card-border);
+  border-radius: 8px;
+  padding: 4px 12px;
+  transition: border-color 0.2s ease;
+}
+.arena-filter-select-wrap:focus-within {
+  border-color: var(--gold);
+}
+.arena-filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.arena-filter-select {
+  background: transparent;
+  border: none;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 4px 2px;
+  outline: none;
+}
+.arena-filter-select option {
+  background: var(--card);
+  color: var(--ink);
+}
+.arena-filter-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+.btn-clear-filters {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+.btn-clear-filters:hover {
+  color: var(--ink);
+}
+.arena-no-matches-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 36px 20px;
+  background: var(--paper-2);
+  border: 2px dashed var(--card-border);
+  border-radius: 12px;
+}
+.arena-no-matches-icon {
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+.arena-no-matches-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.arena-no-matches-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  max-width: 380px;
+  margin-bottom: 14px;
+}
+
