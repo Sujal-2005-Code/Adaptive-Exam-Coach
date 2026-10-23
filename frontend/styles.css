@@ -82,7 +82,7 @@ body{
   bottom: 0;
   background: rgba(31, 42, 68, 0.45);
   backdrop-filter: blur(3px);
-  z-index: 1040;
+  z-index: 700;
   opacity: 0;
   transition: opacity 0.25s ease;
 }
@@ -104,7 +104,7 @@ body.sidebar-open .sidebar-backdrop {
   box-shadow: 2px 0 10px rgba(31, 42, 68, 0.03);
   display: flex;
   flex-direction: column;
-  z-index: 950;
+  z-index: 600;
   overflow: hidden;
   transform: translateX(0);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease;
@@ -125,7 +125,7 @@ body.sidebar-open .sidebar-backdrop {
   top: 50%;
   left: 275px;
   transform: translateY(-50%);
-  z-index: 1200;
+  z-index: 650;
   width: 30px;
   height: 68px;
   background: var(--card);
@@ -583,7 +583,7 @@ body.sidebar-open .sidebar-backdrop {
     top: 0;
     left: 0;
     bottom: 0;
-    z-index: 1050;
+    z-index: 750;
     width: 280px;
     transform: translateX(-100%);
     box-shadow: 6px 0 25px rgba(31, 42, 68, 0.2);
@@ -603,7 +603,7 @@ body.sidebar-open .sidebar-backdrop {
   left: 275px;
   right: 0;
   height: 68px;
-  z-index: 1000;
+  z-index: 500;
   background: var(--paper);
   background-image: repeating-linear-gradient(var(--paper) 0px, var(--paper) 27px, var(--line) 28px);
   border-bottom: 1.5px solid var(--card-border);
@@ -1812,7 +1812,7 @@ table.hist tr:last-child td{ border-bottom:none; }
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 990;
+  z-index: 650;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1901,7 +1901,7 @@ table.hist tr:last-child td{ border-bottom:none; }
   max-width: calc(100vw - 32px);
   height: 560px;
   max-height: calc(100vh - 110px);
-  z-index: 995;
+  z-index: 800;
   background: var(--card);
   border: 2px solid var(--card-border);
   border-radius: 16px;
@@ -2226,9 +2226,13 @@ table.hist tr:last-child td{ border-bottom:none; }
 /* Auth Modal Styles */
 .auth-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+  background: rgba(31, 42, 68, 0.48); backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex; justify-content: center; align-items: center;
-  z-index: 1000;
+  z-index: 99999;
+}
+:root.dark .auth-overlay {
+  background: rgba(10, 14, 23, 0.68);
 }
 .auth-card {
   background: var(--paper); border: 2px solid var(--card-border);
