@@ -2195,7 +2195,7 @@ p.section-sub{ margin:0 0 18px; color:var(--ink-soft); font-size:13.5px; }
 .opt .letter{ font-family:'IBM Plex Mono',monospace; font-weight:700; width:22px; flex-shrink:0; color:var(--gold);}
 .opt.correct{ background:rgba(63,122,78,.16); border-color:var(--green); }
 .opt.incorrect{ background:rgba(181,56,44,.14); border-color:var(--red-soft); }
-.opt.disabled{ cursor:default; opacity:.75; }
+.opt.disabled{ cursor:default; opacity:.85; pointer-events: none !important; }
 
 .explain-box{
   margin-top:16px; padding:14px 16px; border-radius:8px;

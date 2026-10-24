@@ -622,6 +622,108 @@ async function fetchNextQuestion() {
   }
 }
 
+// Robust Answer Normalization & Matching System
+function cleanOptionText(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    // replace non-breaking spaces and narrow no-break spaces with standard space
+    .replace(/[\u00a0\u2000-\u200b\u202f\u205f]/g, ' ')
+    // remove LaTeX math delimiters \( \) \[ \] $ $$
+    .replace(/\\\(|\\\)|\\\[|\\\]|\$+/g, '')
+    // remove leading option markers like "A)", "A.", "(A)", "Option A:", "Option A -", "A - "
+    .replace(/^\s*(?:option\s*)?[A-D][\.\)\:\-]\s*/i, '')
+    // remove trailing periods, commas, semicolons
+    .replace(/[\.\,\;\s]+$/, '')
+    .trim()
+    .toLowerCase();
+}
+
+function isOptionCorrect(choiceText, choiceIndex, correctAns, allOptions) {
+  if (correctAns === null || correctAns === undefined) return false;
+  
+  const choiceClean = cleanOptionText(choiceText);
+  const correctRaw = String(correctAns).trim();
+  const correctClean = cleanOptionText(correctRaw);
+  
+  // 1. Exact cleaned text match
+  if (choiceClean && correctClean && choiceClean === correctClean) {
+    return true;
+  }
+  
+  // 2. Letter match: if correctAns is "A", "B", "C", "D" or "Option A", "A.", etc.
+  const choiceLetter = String.fromCharCode(65 + choiceIndex); // 'A', 'B', 'C', 'D'
+  const letterMatch = correctRaw.match(/^(?:option\s*)?([A-D])(?:[\.\)\:\-]|\b)/i);
+  if (letterMatch && letterMatch[1].toUpperCase() === choiceLetter) {
+    return true;
+  }
+  
+  // 3. Index match: if correctAns is an integer index like 0, 1, 2, 3 or "0", "1"
+  if (/^\d+$/.test(correctRaw) && parseInt(correctRaw, 10) === choiceIndex) {
+    return true;
+  }
+  
+  // 4. True / False match
+  const choiceLower = String(choiceText || '').trim().toLowerCase();
+  const correctLower = correctRaw.toLowerCase();
+  if (choiceLower === 'true' && (correctLower === 'true' || correctLower === 't' || correctLower === 'true.' || (choiceIndex === 0 && letterMatch && letterMatch[1].toUpperCase() === 'A'))) {
+    return true;
+  }
+  if (choiceLower === 'false' && (correctLower === 'false' || correctLower === 'f' || correctLower === 'false.' || (choiceIndex === 1 && letterMatch && letterMatch[1].toUpperCase() === 'B'))) {
+    return true;
+  }
+  
+  // 5. Substring / contained match
+  if (choiceClean && correctClean) {
+    if (correctClean.includes(choiceClean) || choiceClean.includes(correctClean)) {
+      return true;
+    }
+  }
+  
+  // 6. Number equivalence without spaces (e.g. "11.8 m/s" vs "11.8m/s")
+  const choiceNoSpace = choiceClean.replace(/\s+/g, '');
+  const correctNoSpace = correctClean.replace(/\s+/g, '');
+  if (choiceNoSpace && correctNoSpace && choiceNoSpace === correctNoSpace) {
+    return true;
+  }
+
+  return false;
+}
+
+function getCorrectOptionIndex(correctAns, allOptions) {
+  if (!Array.isArray(allOptions)) return -1;
+  for (let i = 0; i < allOptions.length; i++) {
+    if (isOptionCorrect(allOptions[i], i, correctAns, allOptions)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function parseSataAnswers(rawAnswer, allOptions) {
+  let list = [];
+  if (Array.isArray(rawAnswer)) {
+    list = rawAnswer;
+  } else if (typeof rawAnswer === 'string') {
+    try {
+      const parsed = JSON.parse(rawAnswer);
+      if (Array.isArray(parsed)) list = parsed;
+      else list = [rawAnswer];
+    } catch (e) {
+      list = rawAnswer.split(',').map(s => s.trim()).filter(Boolean);
+    }
+  }
+  
+  const correctIndices = new Set();
+  list.forEach(ansItem => {
+    allOptions.forEach((opt, idx) => {
+      if (isOptionCorrect(opt, idx, ansItem, allOptions)) {
+        correctIndices.add(idx);
+      }
+    });
+  });
+  return correctIndices;
+}
+
 function renderQuestion(){
   const q = quiz.questions[quiz.index];
   quiz.topicsAsked.push(q.topic);
@@ -648,6 +750,7 @@ function renderQuestion(){
       window.MathJax.typesetPromise([document.getElementById('quizActive')]).catch(err => console.log(err));
   }
   const optWrap = document.getElementById('qOptions');
+  let questionAnswered = false;
   
   if (q.type === 'short') {
     optWrap.innerHTML = `
@@ -655,10 +758,23 @@ function renderQuestion(){
       <button class="btn" id="submitShortAnswerBtn">Submit Answer</button>
     `;
     document.getElementById('submitShortAnswerBtn').addEventListener('click', async () => {
+      if (questionAnswered) return;
       const val = document.getElementById('shortAnswerInput').value.trim();
       if (!val) return;
+
+      questionAnswered = true;
+      document.getElementById('shortAnswerInput').disabled = true;
       document.getElementById('submitShortAnswerBtn').disabled = true;
       document.getElementById('submitShortAnswerBtn').textContent = "Evaluating...";
+
+      // Instant local check for exact/fuzzy match
+      const localClean = cleanOptionText(val);
+      const idealClean = cleanOptionText(q.a);
+      if (localClean && idealClean && (localClean === idealClean || idealClean.includes(localClean) || localClean.includes(idealClean))) {
+        addXP(10);
+        processAnswerResult(true);
+        return;
+      }
       
       try {
         const res = await fetch(`${API_BASE}/quiz/evaluate`, {
@@ -666,57 +782,97 @@ function renderQuestion(){
           body: JSON.stringify({ question: q.q, answer: val, idealAnswer: q.a })
         });
         const evalData = await res.json();
-        q.e = evalData.explanation; // override explanation with custom feedback
-        processAnswerResult(evalData.correct);
+        const isCorrect = Boolean(
+          evalData.correct === true || 
+          evalData.correct === 'true' || 
+          evalData.is_correct === true || 
+          evalData.is_correct === 'true' || 
+          evalData.verdict === 'correct'
+        );
+        if (evalData.explanation) {
+          q.e = evalData.explanation;
+        }
+        if (isCorrect) {
+          addXP(10);
+        }
+        processAnswerResult(isCorrect);
       } catch (e) {
         console.error(e);
-        document.getElementById('submitShortAnswerBtn').disabled = false;
-        document.getElementById('submitShortAnswerBtn').textContent = "Retry Submit";
+        const fallbackCorrect = Boolean(localClean && idealClean && idealClean.includes(localClean));
+        if (fallbackCorrect) addXP(10);
+        processAnswerResult(fallbackCorrect);
       }
     });
   } else if (q.type === 'sata') {
-    optWrap.innerHTML = q.o.map((opt,i)=>
+    optWrap.innerHTML = q.o.map((opt, i) =>
       `<label class="opt sata-opt" style="display:flex; align-items:center; gap:10px;">
-         <input type="checkbox" value="${opt}">
-         <span>${opt}</span>
+         <input type="checkbox" data-i="${i}" value="${opt}">
+         <span class="letter">${String.fromCharCode(65 + i)}</span>
+         <span class="opt-text">${opt}</span>
        </label>`
     ).join('') + `<button class="btn" id="submitSataBtn" style="margin-top:10px;">Submit Answer</button>`;
-    
+
+    const correctIndices = parseSataAnswers(q.a, q.o);
+
     document.getElementById('submitSataBtn').addEventListener('click', () => {
-      const selected = Array.from(optWrap.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-      const correctOptions = q.a || [];
-      const isCorrect = selected.length === correctOptions.length && selected.every(val => correctOptions.includes(val));
-      
+      if (questionAnswered) return;
+      questionAnswered = true;
+
+      const checkedBoxes = Array.from(optWrap.querySelectorAll('input[type="checkbox"]:checked'));
+      const selectedIndices = checkedBoxes.map(cb => parseInt(cb.dataset.i, 10));
+
+      const isCorrect = (selectedIndices.length === correctIndices.size) &&
+        selectedIndices.every(idx => correctIndices.has(idx));
+
       optWrap.querySelectorAll('.sata-opt').forEach(lbl => {
         const cb = lbl.querySelector('input');
         cb.disabled = true;
-        if (correctOptions.includes(cb.value)) {
-            lbl.classList.add('correct');
-        } else if (cb.checked && !correctOptions.includes(cb.value)) {
-            lbl.classList.add('incorrect');
+        lbl.style.pointerEvents = 'none';
+        const idx = parseInt(cb.dataset.i, 10);
+        if (correctIndices.has(idx)) {
+          lbl.classList.add('correct');
+        } else if (cb.checked) {
+          lbl.classList.add('incorrect');
         }
       });
+
       document.getElementById('submitSataBtn').style.display = 'none';
+      if (isCorrect) {
+        addXP(10);
+      }
       processAnswerResult(isCorrect);
     });
   } else {
     // MCQ / TF
-    optWrap.innerHTML = q.o.map((opt,i)=>
-      `<button class="opt" data-i="${i}"><span class="letter">${String.fromCharCode(65+i)}</span>${opt}</button>`
+    optWrap.innerHTML = q.o.map((opt, i) =>
+      `<button class="opt" data-i="${i}"><span class="letter">${String.fromCharCode(65 + i)}</span><span class="opt-text">${opt}</span></button>`
     ).join('');
-    optWrap.querySelectorAll('.opt').forEach(btn=>{
-      btn.addEventListener('click', ()=> {
-        const choice = q.o[btn.dataset.i];
-        const isCorrect = String(choice).toLowerCase().trim() === String(q.a).toLowerCase().trim();
+
+    const correctIndex = getCorrectOptionIndex(q.a, q.o);
+
+    optWrap.querySelectorAll('.opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (questionAnswered) return;
+        questionAnswered = true;
+
+        const clickedIndex = parseInt(btn.dataset.i, 10);
+        const choice = q.o[clickedIndex];
+        const isCorrect = isOptionCorrect(choice, clickedIndex, q.a, q.o);
+
         optWrap.querySelectorAll('.opt').forEach(b => {
           b.classList.add('disabled');
-          const bChoice = q.o[b.dataset.i];
-          if (String(bChoice).toLowerCase().trim() === String(q.a).toLowerCase().trim()) b.classList.add('correct');
-          if (bChoice === choice && !isCorrect) b.classList.add('incorrect');
+          b.style.pointerEvents = 'none';
+          const bIdx = parseInt(b.dataset.i, 10);
+          if (bIdx === correctIndex || (correctIndex === -1 && isOptionCorrect(q.o[bIdx], bIdx, q.a, q.o))) {
+            b.classList.add('correct');
+          }
+          if (bIdx === clickedIndex && !isCorrect) {
+            b.classList.add('incorrect');
+          }
         });
 
         if (isCorrect) {
-            addXP(10);
+          addXP(10);
         }
         processAnswerResult(isCorrect);
       });
@@ -753,6 +909,7 @@ function renderQuestion(){
 }
 
 function processAnswerResult(correct){
+  if (!quiz) return;
   const q = quiz.questions[quiz.index];
   
   if (q.topic && weaknessTracker[q.topic]) {
@@ -763,7 +920,7 @@ function processAnswerResult(correct){
       microTracker[q.subtopic].total += 1;
   }
   
-  quiz.answers.push({topic:q.topic, correct, diff:q.d});
+  quiz.answers.push({topic:q.topic, correct: !!correct, diff:q.d});
   if(correct) {
      quiz.correctCount++;
      if(quiz.currentDifficulty === 'easy') quiz.currentDifficulty = 'medium';
@@ -801,10 +958,15 @@ function endQuiz(early, timeout = false){
   if (quiz && quiz.timerInterval) clearInterval(quiz.timerInterval);
   const weightsAfter = currentWeights();
   beforeAfterSnapshot = { before: quiz.weightsBefore, after: weightsAfter, topicsAsked: quiz.topicsAsked };
+  
+  const totalQuestions = (!early || timeout) ? Math.max(quiz.n, quiz.answers.length) : (quiz.answers.length || quiz.n);
+  const finalScore = Math.min(quiz.correctCount, totalQuestions);
+  const pct = totalQuestions > 0 ? Math.round((finalScore / totalQuestions) * 100) : 0;
+
   quizHistory.push({
     date: todayStr(),
-    score: quiz.correctCount,
-    total: quiz.answers.length,
+    score: finalScore,
+    total: totalQuestions,
     topics: [...new Set(quiz.topicsAsked)],
     accuracyAtEnd: overallAccuracy(),
     demo: quiz.isDemo
@@ -813,13 +975,16 @@ function endQuiz(early, timeout = false){
   document.getElementById('quizActive').style.display='none';
   const res = document.getElementById('quizResult');
   res.style.display='block';
-  const pct = quiz.answers.length? Math.round(quiz.correctCount/quiz.answers.length*100) : 0;
+
   const weak = getTop3Weakest();
+  const primaryWeak = (weak && weak[0] && weak[0].topic) ? weak[0].topic : (TOPICS[0] || 'Core Topics');
+  const secondaryWeak = (weak && weak[1] && weak[1].topic) ? `, then ${weak[1].topic}` : '';
+
   res.innerHTML = `
     <div style="text-align:center; padding:10px 0 4px;">
       <div style="font-family:'Kalam',cursive; font-size:26px;">${timeout ? "⏳ Time's Up!" : (early ? 'Quiz Ended Early' : 'Quiz Complete!')}</div>
-      <div style="font-size:44px; font-weight:700; font-family:'IBM Plex Mono',monospace; color:${pct>=70?'var(--green)':pct>=40?'var(--gold)':'var(--red-soft)'}; margin:8px 0;">${quiz.correctCount}/${quiz.answers.length}</div>
-      <div style="color:var(--ink-soft); font-size:13.5px; margin-bottom:18px;">${pct}% correct — the coach has already re-weighted your next quiz.</div>
+      <div style="font-size:44px; font-weight:700; font-family:'IBM Plex Mono',monospace; color:${pct>=70?'var(--green)':pct>=40?'var(--gold)':'var(--red-soft)'}; margin:8px 0;">${finalScore} / ${totalQuestions}</div>
+      <div style="color:var(--ink-soft); font-size:13.5px; margin-bottom:18px;">${pct}% correct (${finalScore} of ${totalQuestions} correct) — the coach has already re-weighted your next quiz.</div>
     </div>
     <div class="before-after-grid" style="margin: 16px 0;">
       <div class="ba-card-box">
@@ -849,7 +1014,7 @@ function endQuiz(early, timeout = false){
       </div>
     </div>
     <div style="margin-top:16px; padding:12px 14px; background:var(--paper-2); border-radius:8px; font-size:13px; border:1px solid var(--card-border);">
-      <b>Coach's read:</b> your next quiz will lean toward <b style="color:var(--red-soft)">${weak[0].topic}</b>${weak[1]?`, then ${weak[1].topic}`:''} — that's where practice will help most.
+      <b>Coach's read:</b> your next quiz will lean toward <b style="color:var(--red-soft)">${primaryWeak}</b>${secondaryWeak} — that's where practice will help most.
     </div>
     <div class="quiz-actions" style="justify-content:center; margin-top:18px;">
       <button class="btn secondary" id="viewDashBtn">View Dashboard →</button>

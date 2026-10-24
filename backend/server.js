@@ -483,9 +483,9 @@ The object strictly must have this structure:
                     throw new Error("Missing required fields (q or a)");
                 }
                 
-                // Save to DB
-                sanitizeQuestionForDB(q);
-                const newQ = new Question(q);
+                // Save to DB without mutating in-memory q
+                const dbQ = sanitizeQuestionForDB(JSON.parse(JSON.stringify(q)));
+                const newQ = new Question(dbQ);
                 await newQ.save().catch(err => console.error("Failed to save to DB:", err));
                 
             } catch (e) {
@@ -506,6 +506,14 @@ The object strictly must have this structure:
             } else {
                 return res.status(500).json({ error: "AI returned malformed JSON and no DB fallback available." });
             }
+        }
+
+        // Ensure SATA format is sent as an array to frontend
+        if (q && q.type === 'sata' && typeof q.a === 'string') {
+            try {
+                const parsedSata = JSON.parse(q.a);
+                if (Array.isArray(parsedSata)) q.a = parsedSata;
+            } catch (e) {}
         }
 
         res.json(q);
@@ -646,15 +654,25 @@ Do NOT wrap the response in markdown blocks like \`\`\`html. Just return the raw
 app.post('/api/quiz/evaluate', async (req, res) => {
     try {
         const { question, answer, idealAnswer } = req.body;
+        const cleanA = String(answer || '').trim().toLowerCase();
+        const cleanIdeal = String(idealAnswer || '').trim().toLowerCase();
+        
+        // Fast direct exact/fuzzy match check before calling LLM
+        if (cleanA && cleanIdeal) {
+            if (cleanA === cleanIdeal || cleanIdeal.includes(cleanA) || cleanA.includes(cleanIdeal)) {
+                return res.json({ correct: true, explanation: `Correct! "${idealAnswer}" was the expected answer.` });
+            }
+        }
+
         const prompt = `You are an expert tutor. Evaluate if the student's answer is conceptually correct.
 Question: ${question}
 Ideal Answer: ${idealAnswer}
 Student's Answer: ${answer}
 
-Is the student's answer correct? Be lenient with spelling and wording as long as the core concept is right.
+Is the student's answer correct? Be lenient with spelling, minor typos, and wording as long as the core concept is right.
 Return a pure JSON object. Do NOT include markdown blocks.
 {
-  "correct": true or false,
+  "correct": true,
   "explanation": "String (A brief explanation of why it is correct or incorrect, referencing their answer.)"
 }`;
         const chatCompletion = await groq.chat.completions.create({
@@ -664,7 +682,17 @@ Return a pure JSON object. Do NOT include markdown blocks.
             max_tokens: 256
         });
         const aiResponse = chatCompletion.choices[0]?.message?.content || "";
-        res.json(safeJSONParse(aiResponse) || { correct: false, explanation: "Error evaluating answer." });
+        const parsed = safeJSONParse(aiResponse) || {};
+        const isCorrect = (
+            parsed.correct === true || 
+            parsed.correct === 'true' || 
+            parsed.is_correct === true || 
+            parsed.is_correct === 'true'
+        );
+        res.json({
+            correct: isCorrect,
+            explanation: parsed.explanation || (isCorrect ? "Correct!" : `The expected answer was: ${idealAnswer}`)
+        });
     } catch (error) {
         console.error("Evaluation Error:", error);
         res.status(500).json({ error: "Failed to evaluate answer" });
