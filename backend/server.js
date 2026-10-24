@@ -39,12 +39,91 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/aec-vap', {
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('MongoDB connection error:', err));
 
+const ALLOWED_ORIGINS = [
+    'https://adaptive-exam-coach.vercel.app',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500'
+];
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (e.g. server-side proxy rewrites from Vercel, mobile apps, or local curls)
+        if (!origin) return callback(null, true);
+        if (ALLOWED_ORIGINS.includes(origin) || /\.vercel\.app$/.test(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('Blocked by CORS policy: Unauthorized Origin'));
+    },
+    credentials: true
+};
+
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
-app.use(cors());
+const io = new Server(server, {
+    cors: {
+        origin: (origin, callback) => {
+            if (!origin || ALLOWED_ORIGINS.includes(origin) || /\.vercel\.app$/.test(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error('Blocked by Socket.io CORS policy'));
+            }
+        },
+        credentials: true
+    }
+});
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// In-memory sliding rate limiter to protect Groq, OCR, and Auth from abuse
+const rateLimitStore = new Map();
+function createRateLimiter(windowMs, maxRequests, errMsg) {
+    return (req, res, next) => {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+        const now = Date.now();
+        const records = rateLimitStore.get(ip) || [];
+        const validRecords = records.filter(t => now - t < windowMs);
+        if (validRecords.length >= maxRequests) {
+            return res.status(429).json({ error: errMsg || 'Too many requests. Please try again shortly.' });
+        }
+        validRecords.push(now);
+        rateLimitStore.set(ip, validRecords);
+        next();
+    };
+}
+
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, records] of rateLimitStore.entries()) {
+        const valid = records.filter(t => now - t < 15 * 60 * 1000);
+        if (valid.length === 0) rateLimitStore.delete(ip);
+        else rateLimitStore.set(ip, valid);
+    }
+}, 10 * 60 * 1000).unref();
+
+const authLimiter = createRateLimiter(15 * 60 * 1000, 25, 'Too many authentication attempts. Please try again in 15 minutes.');
+const aiLimiter = createRateLimiter(60 * 1000, 35, 'Too many requests to AI services. Please slow down.');
+
+// Security Gateway Shield Middleware:
+// Protects backend against unauthorized direct requests or scraping
+app.use('/api', (req, res, next) => {
+    if (req.path === '/health') return next();
+
+    const origin = req.headers['origin'] || req.headers['referer'] || '';
+    const shield = req.headers['x-aec-shield'];
+    const isVercelProxy = origin.includes('vercel.app') || req.headers['x-forwarded-host']?.includes('vercel.app');
+    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1') || req.headers['host']?.includes('localhost');
+
+    // Allow legitimate app traffic: verified shield key, Vercel edge proxy, or local dev
+    if (shield === 'aec-vap-secure-shield-v4' || isVercelProxy || isLocalhost) {
+        return next();
+    }
+
+    return res.status(403).json({ error: 'Access denied: Direct unauthorized API access blocked.' });
+});
 // Always start with the landing page at root route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/landing.html'));
@@ -201,7 +280,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 // Auth Routes
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', authLimiter, async (req, res) => {
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({ error: 'Database is still establishing connection. Please try again in 5 seconds.' });
     }
@@ -220,7 +299,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authLimiter, async (req, res) => {
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({ error: 'Database is still establishing connection. Please try again in 5 seconds.' });
     }
@@ -278,7 +357,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Reset / Forgot Password Route
-app.post('/api/reset-password', async (req, res) => {
+app.post('/api/reset-password', authLimiter, async (req, res) => {
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({ error: 'Database is still establishing connection. Please try again in 5 seconds.' });
     }
@@ -433,7 +512,7 @@ app.post('/api/profile/syllabus', authenticateToken, upload.single('syllabus'), 
     }
 });
 
-app.post('/api/quiz/single', optionalAuth, async (req, res) => {
+app.post('/api/quiz/single', aiLimiter, optionalAuth, async (req, res) => {
     try {
         const { topic, subtopic, difficulty, format } = req.body;
         
@@ -566,7 +645,7 @@ The object strictly must have this structure:
     }
 });
 
-app.post('/api/quiz', optionalAuth, async (req, res) => {
+app.post('/api/quiz', aiLimiter, optionalAuth, async (req, res) => {
     try {
         const { topicsToFocus, difficulty } = req.body;
         
@@ -742,7 +821,7 @@ Return a pure JSON object. Do NOT include markdown blocks.
     }
 });
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', aiLimiter, async (req, res) => {
     try {
         const { chatMessages, image, weaknessTracker, microTracker, quizHistory, isQuizActive, currentQuestion } = req.body;
         

@@ -3,6 +3,10 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://adaptive-exam-coach.onrender.com/api/$1"
+    },
+    {
       "source": "/",
       "destination": "/frontend/landing.html"
     },
