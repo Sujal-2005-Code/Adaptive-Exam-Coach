@@ -46,12 +46,60 @@ const TOPIC_ICONS = {
   Chemistry: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.1 19.34A2 2 0 0 0 5.76 22h12.48a2 2 0 0 0 1.66-2.66L14 9.31V2h-4z"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>`,
   Biology: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/><path d="M17 6l3-3"/><path d="M4 21l3-3"/></svg>`
 };
+const SYLLABUS_PALETTE = [
+  "#B4801F", // gold
+  "#1F2A44", // deep navy
+  "#2E7D32", // forest green
+  "#8E24AA", // deep violet/purple
+  "#C2185B", // crimson rose
+  "#00838F", // cyan teal
+  "#D84315", // rust orange
+  "#3949AB", // royal indigo
+  "#4E342E", // rich mocha
+  "#00796B"  // pine teal
+];
+
+function getTopicColor(t, idx = 0) {
+  if (TOPIC_COLOR[t]) return TOPIC_COLOR[t];
+  const lower = String(t || '').toLowerCase();
+  if (lower.includes('math') || lower.includes('algebra') || lower.includes('arith')) return "#B4801F";
+  if (lower.includes('geom')) return "#1F2A44";
+  if (lower.includes('physic') || lower.includes('mechanic')) return "#1E40AF";
+  if (lower.includes('chem')) return "#2E7D32";
+  if (lower.includes('bio') || lower.includes('botan') || lower.includes('zool') || lower.includes('environ')) return "#C0392B";
+  if (lower.includes('hist') || lower.includes('politic') || lower.includes('civic') || lower.includes('social')) return "#7B1FA2";
+  if (lower.includes('lang') || lower.includes('english') || lower.includes('hindi') || lower.includes('marathi') || lower.includes('french') || lower.includes('literat')) return "#C26D1A";
+  if (lower.includes('comput') || lower.includes('code') || lower.includes('technol')) return "#00838F";
+  return SYLLABUS_PALETTE[idx % SYLLABUS_PALETTE.length];
+}
+
 const DEFAULT_TOPIC_ICON = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
 
 function getTopicIcon(t) {
   if (TOPIC_ICONS[t]) return TOPIC_ICONS[t];
   const lower = String(t || '').toLowerCase();
   
+  if (lower.includes('math') || lower.includes('algebra') || lower.includes('geometr') || lower.includes('calcul') || lower.includes('arith')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M4 5h16M7 5l5 14M17 5l-5 14"/></svg>`;
+  }
+  if (lower.includes('physic') || lower.includes('mechanic') || lower.includes('quantum') || lower.includes('optic')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(30 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-30 12 12)"/></svg>`;
+  }
+  if (lower.includes('chem') || lower.includes('organic') || lower.includes('inorganic') || lower.includes('reaction')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.1 19.34A2 2 0 0 0 5.76 22h12.48a2 2 0 0 0 1.66-2.66L14 9.31V2h-4z"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>`;
+  }
+  if (lower.includes('bio') || lower.includes('botany') || lower.includes('zoolog') || lower.includes('environment') || lower.includes('ecolog')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/><path d="M17 6l3-3"/><path d="M4 21l3-3"/></svg>`;
+  }
+  if (lower.includes('science') || lower.includes('technol')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18h12M12 2v4M5 6l2 2M19 6l-2 2M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"/></svg>`;
+  }
+  if (lower.includes('hist') || lower.includes('politic') || lower.includes('civic') || lower.includes('social') || lower.includes('geograph')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
+  }
+  if (lower.includes('lang') || lower.includes('english') || lower.includes('hindi') || lower.includes('literat') || lower.includes('gramm') || lower.includes('sanskrit') || lower.includes('french') || lower.includes('marathi')) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>`;
+  }
   if (lower.includes('data') || lower.includes('dbms') || lower.includes('sql') || lower.includes('storage')) {
     return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>`;
   }
@@ -166,6 +214,10 @@ function updateCustomSubjectDropdown() {
 
     if (typeof populateArenaSubjectsAndTopics === 'function') {
         populateArenaSubjectsAndTopics();
+    }
+
+    if (typeof renderFocusMeter === 'function') {
+        renderFocusMeter();
     }
 }
 
@@ -361,14 +413,6 @@ function renderFocusMeter(){
   const el = document.getElementById('focusMeter');
   if (!el) return;
 
-  const TOPIC_ICONS = {
-    Math: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19h16M4 5h16M7 5l5 14M17 5l-5 14"/></svg>`,
-    Physics: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(30 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-30 12 12)"/></svg>`,
-    Chemistry: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 2v7.31L4.1 19.34A2 2 0 0 0 5.76 22h12.48a2 2 0 0 0 1.66-2.66L14 9.31V2h-4z"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>`,
-    Biology: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/><path d="M17 6l3-3"/><path d="M4 21l3-3"/></svg>`
-  };
-  const defaultIcon = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
-
   const TOPIC_NAMES = {
     Math: "Mathematics",
     Physics: "Physics",
@@ -376,30 +420,53 @@ function renderFocusMeter(){
     Biology: "Biology"
   };
 
-  el.innerHTML = TOPICS.map(t => {
-    const pct = Math.round((w[t] / maxW) * 100);
+  const hasCustom = typeof customSyllabusData === 'object' && customSyllabusData !== null && Object.keys(customSyllabusData).length > 0;
+  
+  // Dynamically update radar badge and subtitle for syllabus
+  const radarBadge = document.getElementById('focusMeterLiveBadge');
+  if (radarBadge) {
+    if (hasCustom) {
+      radarBadge.innerHTML = `<span class="radar-dot"></span> 📜 ${TOPICS.length} Syllabus Subjects`;
+      radarBadge.title = `Loaded from ${customSyllabusName || 'custom syllabus'}. Scroll inside to view all subjects.`;
+    } else {
+      radarBadge.innerHTML = `<span class="radar-dot"></span> Live Weighting`;
+      radarBadge.title = 'Real-time adaptive weighting';
+    }
+  }
+  const subTitle = document.getElementById('focusMeterSubTitle');
+  if (subTitle) {
+    if (hasCustom && TOPICS.length > 4) {
+      subTitle.textContent = `Syllabus weights (${TOPICS.length} subjects • scroll to view)`;
+    } else {
+      subTitle.textContent = 'Real-time adaptive weight per topic';
+    }
+  }
+
+  el.innerHTML = TOPICS.map((t, idx) => {
+    const weightVal = (w[t] !== undefined) ? w[t] : 1;
+    const pct = Math.round((weightVal / maxW) * 100);
     const isWeak = t === weakest && weaknessTracker[t] && weaknessTracker[t].total > 0;
-    const color = TOPIC_COLOR[t] || "var(--ink)";
-    const icon = TOPIC_ICONS[t] || defaultIcon;
+    const color = getTopicColor(t, idx);
+    const icon = getTopicIcon(t);
     const name = TOPIC_NAMES[t] || t;
     
     let priorityBadge = '';
     if (isWeak) {
-      priorityBadge = `<span class="fm-priority-chip chip-weakest">🔥 Focus Area</span>`;
+      priorityBadge = `<span class="fm-priority-chip chip-weakest" title="Targeted weakness priority">🔥 Focus Area</span>`;
     } else if (pct >= 80) {
-      priorityBadge = `<span class="fm-priority-chip chip-active">⚡ Active Weight</span>`;
+      priorityBadge = `<span class="fm-priority-chip chip-active" title="Active quiz weighting">⚡ Active Weight</span>`;
     } else {
-      priorityBadge = `<span class="fm-priority-chip chip-balanced">⚖️ Balanced</span>`;
+      priorityBadge = `<span class="fm-priority-chip chip-balanced" title="Balanced curriculum weight">⚖️ Balanced</span>`;
     }
 
     return `
-      <div class="focus-meter-row-item ${isWeak ? 'weakest-topic' : ''}">
+      <div class="focus-meter-row-item ${isWeak ? 'weakest-topic' : ''}" title="${name}: ${pct}% adaptive weighting" style="border-left: 3px solid ${color};">
         <div class="fm-item-top">
-          <div class="fm-subject-wrap">
+          <div class="fm-subject-wrap" title="${name}">
             <span class="fm-subject-icon-box" style="color:${color}; background:${color}18; border-color:${color}33;">
               ${icon}
             </span>
-            <span class="fm-subject-label" style="color:var(--ink);">${name}</span>
+            <span class="fm-subject-label" style="color:var(--ink);" title="${name}">${name}</span>
           </div>
           <div class="fm-meta-wrap">
             ${priorityBadge}
@@ -561,12 +628,14 @@ function renderQuestion(){
   document.getElementById('qProgress').textContent = `Question ${quiz.index+1} / ${quiz.n}`;
   const badge = document.getElementById('qTopicBadge');
   badge.textContent = q.topic || "General";
-  badge.style.color = TOPIC_COLOR[q.topic] || "#000";
+  badge.title = q.topic || "General";
+  badge.style.color = getTopicColor(q.topic) || "var(--ink)";
   
   const subBadge = document.getElementById('qSubtopicBadge');
   if(q.subtopic) {
     subBadge.style.display = 'inline-block';
     subBadge.textContent = q.subtopic;
+    subBadge.title = q.subtopic;
   } else {
     subBadge.style.display = 'none';
   }
