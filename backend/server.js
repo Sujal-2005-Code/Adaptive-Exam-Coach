@@ -61,6 +61,9 @@ app.get('/login', (req, res) => {
 app.get('/app', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', time: Date.now(), database: mongoose.connection.readyState === 1 ? 'connected' : 'connecting' });
+});
 
 app.use(express.static(path.join(__dirname, '../frontend'), { index: 'landing.html' }));
 

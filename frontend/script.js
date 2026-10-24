@@ -2760,17 +2760,15 @@ function loadSocketIoClient(callback) {
   document.head.appendChild(script);
 }
 
-function ensureArenaSocket(callback) {
-  if (arenaSocket && arenaSocket.connected) {
-    if (callback) callback(arenaSocket);
-    return arenaSocket;
-  }
+function ensureArenaSocket() {
+  if (arenaSocket && arenaSocket.connected) return arenaSocket;
+  if (arenaSocket) return arenaSocket;
 
   if (typeof io !== 'function') {
     console.warn('Socket.io client library not yet ready. Loading dynamically...');
     loadSocketIoClient(() => {
       if (typeof io === 'function') {
-        const sock = ensureArenaSocket(callback);
+        ensureArenaSocket();
         fetchPublicLobbies();
       }
     });
@@ -2779,13 +2777,18 @@ function ensureArenaSocket(callback) {
 
   arenaSocket = io(BACKEND_URL, {
     transports: ['websocket', 'polling'],
-    reconnectionAttempts: 5
+    reconnectionAttempts: 15,
+    timeout: 20000
   });
 
   // Socket Event Listeners
   arenaSocket.on('connect', () => {
     console.log('⚡ Connected to Arena Socket:', arenaSocket.id);
     fetchPublicLobbies();
+  });
+
+  arenaSocket.on('connect_error', (err) => {
+    console.warn('⚡ Arena socket connection issue:', err.message);
   });
 
   arenaSocket.on('public-rooms-list', (rooms) => {
@@ -2903,6 +2906,11 @@ function ensureArenaSocket(callback) {
   });
 
   arenaSocket.on('room-error', (msg) => {
+    const launchBtn = document.getElementById('arenaLaunchBtn');
+    if (launchBtn) {
+      launchBtn.disabled = false;
+      launchBtn.textContent = '⚔️ Launch Battle Room';
+    }
     const errorBox = document.getElementById('arenaPrivateError');
     if (errorBox) {
       errorBox.textContent = `⚠️ ${msg}`;
@@ -3256,6 +3264,13 @@ function handleRoomEntered(raw, isHost) {
   if (waitingRoom) waitingRoom.style.display = 'block';
   if (battleView) battleView.style.display = 'none';
   if (resultsView) resultsView.style.display = 'none';
+
+  // Reset Launch Button State
+  const launchBtn = document.getElementById('arenaLaunchBtn');
+  if (launchBtn) {
+    launchBtn.disabled = false;
+    launchBtn.textContent = '⚔️ Launch Battle Room';
+  }
 
   // Badges
   const codePill = document.getElementById('arRoomCode');
@@ -3876,10 +3891,15 @@ function leaveArenaRoom() {
 }
 
 function joinArenaRoom(roomId, passcode) {
-  const sock = ensureArenaSocket(() => {
-    joinArenaRoom(roomId, passcode);
-  });
-  if (!sock) return;
+  const sock = ensureArenaSocket();
+  if (!sock) {
+    const errorBox = document.getElementById('arenaPrivateError');
+    if (errorBox) {
+      errorBox.textContent = 'Arena is establishing connection. Please try again in 2 seconds.';
+      errorBox.style.display = 'block';
+    }
+    return;
+  }
 
   const playerInfo = {
     username: currentUser || 'Scholar',
@@ -3902,10 +3922,23 @@ function joinArenaRoom(roomId, passcode) {
 }
 
 function createArenaRoom() {
-  const sock = ensureArenaSocket(() => {
-    createArenaRoom();
-  });
-  if (!sock) return;
+  const sock = ensureArenaSocket();
+  if (!sock) {
+    alert('Connecting to arena server... please try again in a moment.');
+    return;
+  }
+
+  const launchBtn = document.getElementById('arenaLaunchBtn');
+  if (launchBtn) {
+    launchBtn.disabled = true;
+    launchBtn.textContent = '⏳ Launching Arena...';
+    setTimeout(() => {
+      if (launchBtn) {
+        launchBtn.disabled = false;
+        launchBtn.textContent = '⚔️ Launch Battle Room';
+      }
+    }, 4000);
+  }
 
   const visRadio = document.querySelector('input[name="arenaVisibility"]:checked');
   const isPrivate = (visRadio?.value === 'private');
