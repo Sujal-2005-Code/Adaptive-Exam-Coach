@@ -1000,7 +1000,8 @@ io.on('connection', (socket) => {
     });
 
     // Create Room
-    socket.on('create-room', ({ isPrivate, maxPlayers, config, playerInfo }) => {
+    socket.on('create-room', (payload = {}) => {
+        const { isPrivate, maxPlayers, config, playerInfo } = payload || {};
         const roomId = Math.floor(1000 + Math.random() * 9000).toString();
         const passcode = isPrivate ? Math.floor(100000 + Math.random() * 900000).toString() : null;
         const username = playerInfo?.username || 'Scholar';
@@ -1059,8 +1060,23 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Join Room
-    socket.on('join-room', ({ roomId, passcode, playerInfo }) => {
+    // Join Room (Supports both { roomId, passcode, playerInfo } and (roomId, passcode/options))
+    socket.on('join-room', (arg1, arg2) => {
+        let roomId, passcode, playerInfo;
+        if (typeof arg1 === 'object' && arg1 !== null) {
+            roomId = arg1.roomId;
+            passcode = arg1.passcode;
+            playerInfo = arg1.playerInfo;
+        } else {
+            roomId = arg1;
+            if (typeof arg2 === 'object' && arg2 !== null) {
+                passcode = arg2.passcode;
+                playerInfo = arg2.playerInfo;
+            } else {
+                passcode = arg2;
+            }
+        }
+        roomId = (roomId || '').toString().trim();
         const room = rooms[roomId];
         if (!room) {
             return socket.emit('room-error', 'Room not found. Check the code and try again.');

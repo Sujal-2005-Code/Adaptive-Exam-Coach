@@ -2727,18 +2727,46 @@ function ensureArenaSocket() {
     handleRoomEntered(data, false);
   });
 
-  arenaSocket.on('room-roster-update', ({ players, state, hostId }) => {
+  // Backward compatibility for legacy backend emitting player-joined count
+  arenaSocket.on('player-joined', (countOrData) => {
     if (!currentArenaRoom) return;
-    currentArenaRoom.players = players;
-    currentArenaRoom.hostId = hostId;
-    currentArenaRoom.isHost = (hostId === arenaSocket.id);
-    renderWaitingRoster(players, hostId);
+    const count = typeof countOrData === 'number' ? countOrData : countOrData?.count;
+    if (count && currentArenaRoom.players.length < count) {
+      while (currentArenaRoom.players.length < count) {
+        const idx = currentArenaRoom.players.length + 1;
+        currentArenaRoom.players.push({
+          id: `contender_${idx}`,
+          username: `Contender ${idx}`,
+          playerTag: `#SP-${Math.floor(1000 + Math.random() * 9000)}`,
+          avatar: '⚡',
+          score: 0,
+          progress: 0,
+          isHost: false,
+          isReady: true,
+          finished: false,
+          accuracy: 0,
+          correctCount: 0
+        });
+      }
+      renderWaitingRoster(currentArenaRoom.players, currentArenaRoom.hostId);
+    }
   });
 
-  arenaSocket.on('game-generating', ({ message }) => {
+  arenaSocket.on('room-roster-update', (payload) => {
+    if (!currentArenaRoom) return;
+    const players = Array.isArray(payload?.players) ? payload.players : [];
+    const hostId = payload?.hostId || currentArenaRoom.hostId;
+    currentArenaRoom.players = players.length > 0 ? players : currentArenaRoom.players;
+    currentArenaRoom.hostId = hostId;
+    currentArenaRoom.isHost = (hostId === arenaSocket.id);
+    renderWaitingRoster(currentArenaRoom.players, hostId);
+  });
+
+  arenaSocket.on('game-generating', (payload) => {
+    const msg = (typeof payload === 'string' ? payload : payload?.message) || 'Generating battle questions...';
     const statusMsg = document.getElementById('arenaStatusMsg');
     if (statusMsg) {
-      statusMsg.textContent = `⚙️ ${message}`;
+      statusMsg.textContent = `⚙️ ${msg}`;
       statusMsg.style.color = 'var(--gold)';
     }
     const startBtn = document.getElementById('arenaStartBattleBtn');
@@ -2748,20 +2776,36 @@ function ensureArenaSocket() {
     }
   });
 
-  arenaSocket.on('game-start', ({ questions, config, players }) => {
-    currentArenaQuestions = questions || [];
+  arenaSocket.on('game-start', (payload) => {
+    // Support both legacy raw array and modern { questions, config, players } object
+    let questions = [];
+    let config = null;
+    let players = null;
+
+    if (Array.isArray(payload)) {
+      questions = payload;
+    } else if (payload && typeof payload === 'object') {
+      questions = Array.isArray(payload.questions) ? payload.questions : [];
+      config = payload.config;
+      players = payload.players;
+    }
+
+    currentArenaQuestions = questions;
     currentArenaQIndex = 0;
     if (currentArenaRoom) {
-      currentArenaRoom.config = config;
-      currentArenaRoom.players = players;
+      if (config) currentArenaRoom.config = config;
+      if (Array.isArray(players) && players.length > 0) currentArenaRoom.players = players;
     }
     startBattlePhase();
   });
 
-  arenaSocket.on('score-update', ({ players }) => {
+  arenaSocket.on('score-update', (payload) => {
     if (!currentArenaRoom) return;
-    currentArenaRoom.players = players;
-    renderScoreboardTrack(players);
+    const players = Array.isArray(payload?.players) ? payload.players : (Array.isArray(payload) ? payload : null);
+    if (players) {
+      currentArenaRoom.players = players;
+      renderScoreboardTrack(players);
+    }
   });
 
   arenaSocket.on('battle-over', ({ rankings, roomConfig }) => {
@@ -2775,6 +2819,14 @@ function ensureArenaSocket() {
     currentArenaRoom.hostId = hostId;
     currentArenaRoom.isHost = (hostId === arenaSocket.id);
     resetToWaitingRoom();
+  });
+
+  arenaSocket.on('opponent-disconnected', () => {
+    const statusMsg = document.getElementById('arenaStatusMsg');
+    if (statusMsg) {
+      statusMsg.textContent = '⚠️ An opponent has disconnected from the arena.';
+      statusMsg.style.color = 'var(--red-soft)';
+    }
   });
 
   arenaSocket.on('room-error', (msg) => {
@@ -3045,16 +3097,78 @@ function renderPublicLobbies(rooms) {
   handlePublicRoomsList(rooms);
 }
 
-function handleRoomEntered(data, isHost) {
+function handleRoomEntered(raw, isHost) {
+  let roomId = null;
+  let passcode = null;
+  let isPrivate = false;
+  let maxPlayers = 4;
+  let config = null;
+  let players = [];
+
+  if (typeof raw === 'string' || typeof raw === 'number') {
+    roomId = String(raw).trim();
+  } else if (raw && typeof raw === 'object') {
+    roomId = raw.roomId || raw.id || raw.room?.id || raw.room?.roomId;
+    passcode = raw.passcode || raw.room?.passcode || null;
+    isPrivate = !!(raw.isPrivate ?? raw.room?.isPrivate ?? false);
+    maxPlayers = parseInt(raw.maxPlayers || raw.room?.maxPlayers) || 4;
+    config = raw.config || raw.room?.config || null;
+    players = Array.isArray(raw.players) ? raw.players : (Array.isArray(raw.room?.players) ? raw.room.players : []);
+  }
+
+  // Fallback if roomId is missing or empty
+  if (!roomId || roomId === 'undefined' || roomId === 'null') {
+    roomId = Math.floor(1000 + Math.random() * 9000).toString();
+  }
+
+  const myId = arenaSocket?.id || 'self_scholar';
+  const myUsername = currentUser || 'Scholar';
+  const myTag = getScholarPlayerTag();
+  const myAvatar = getScholarAvatar();
+
+  if (!Array.isArray(players) || players.length === 0) {
+    players = [{
+      id: myId,
+      username: myUsername,
+      playerTag: myTag,
+      avatar: myAvatar,
+      score: 0,
+      progress: 0,
+      isHost: !!isHost,
+      isReady: true,
+      finished: false,
+      accuracy: 0,
+      correctCount: 0
+    }];
+  } else {
+    // Ensure all player objects have valid properties and current user is found
+    const hasMe = players.some(p => p && (p.id === myId || p.username === myUsername));
+    if (!hasMe) {
+      players.unshift({
+        id: myId,
+        username: myUsername,
+        playerTag: myTag,
+        avatar: myAvatar,
+        score: 0,
+        progress: 0,
+        isHost: !!isHost,
+        isReady: true,
+        finished: false,
+        accuracy: 0,
+        correctCount: 0
+      });
+    }
+  }
+
   currentArenaRoom = {
-    roomId: data.roomId,
-    isPrivate: data.isPrivate,
-    passcode: data.passcode,
-    maxPlayers: data.maxPlayers,
-    config: data.config,
-    players: data.players,
-    hostId: isHost ? arenaSocket.id : null,
-    isHost: isHost
+    roomId: roomId,
+    isPrivate: isPrivate,
+    passcode: passcode,
+    maxPlayers: maxPlayers,
+    config: config,
+    players: players,
+    hostId: isHost ? myId : (raw?.hostId || players.find(p => p?.isHost)?.id || null),
+    isHost: !!isHost
   };
 
   // Switch Views
@@ -3076,15 +3190,15 @@ function handleRoomEntered(data, isHost) {
   const passBox = document.getElementById('arPasscodeBox');
   const passVal = document.getElementById('arPasscodeVal');
 
-  if (codePill) codePill.textContent = `ROOM #${data.roomId}`;
+  if (codePill) codePill.textContent = `ROOM #${roomId}`;
   if (visBadge) {
-    visBadge.textContent = data.isPrivate ? '🔒 Private' : '🌐 Public';
-    visBadge.style.color = data.isPrivate ? 'var(--gold)' : 'var(--green)';
+    visBadge.textContent = isPrivate ? '🔒 Private' : '🌐 Public';
+    visBadge.style.color = isPrivate ? 'var(--gold)' : 'var(--green)';
   }
   if (passBox && passVal) {
-    if (data.isPrivate && data.passcode) {
+    if (isPrivate && passcode) {
       passBox.style.display = 'inline-flex';
-      passVal.textContent = data.passcode;
+      passVal.textContent = passcode;
     } else {
       passBox.style.display = 'none';
     }
@@ -3092,18 +3206,27 @@ function handleRoomEntered(data, isHost) {
 
   // Room Specs Chips
   const specsRow = document.getElementById('arenaSpecsRow');
-  if (specsRow && data.config) {
-    const fLabel = { mix: 'Mix Formats', mcq: 'MCQ Only', tf: 'True/False', sata: 'SATA', short: 'Short Answer' }[data.config.format] || data.config.format;
-    specsRow.innerHTML = `
-      <span class="arena-spec-chip">📚 ${data.config.subject}${data.config.subtopic && data.config.subtopic !== 'All' ? ' · ' + data.config.subtopic : ''}</span>
-      <span class="arena-spec-chip">📋 ${fLabel}</span>
-      <span class="arena-spec-chip">🔢 ${data.config.count} Questions</span>
-      <span class="arena-spec-chip">⏱️ ${data.config.timer > 0 ? (data.config.timer / 60) + ' Min Match' : 'Untimed'}</span>
-      <span class="arena-spec-chip">👥 Max ${data.maxPlayers} Contenders</span>
-    `;
+  if (specsRow) {
+    if (config) {
+      const fLabel = { mix: 'Mix Formats', mcq: 'MCQ Only', tf: 'True/False', sata: 'SATA', short: 'Short Answer' }[config.format] || config.format;
+      specsRow.innerHTML = `
+        <span class="arena-spec-chip">📚 ${config.subject || 'All'}${config.subtopic && config.subtopic !== 'All' ? ' · ' + config.subtopic : ''}</span>
+        <span class="arena-spec-chip">📋 ${fLabel || 'Mix'}</span>
+        <span class="arena-spec-chip">🔢 ${config.count || 5} Questions</span>
+        <span class="arena-spec-chip">⏱️ ${config.timer > 0 ? (config.timer / 60) + ' Min Match' : 'Untimed'}</span>
+        <span class="arena-spec-chip">👥 Max ${maxPlayers} Contenders</span>
+      `;
+    } else {
+      specsRow.innerHTML = `
+        <span class="arena-spec-chip">📚 General Science & Math</span>
+        <span class="arena-spec-chip">📋 Mix Formats</span>
+        <span class="arena-spec-chip">🔢 5 Questions</span>
+        <span class="arena-spec-chip">👥 Max ${maxPlayers} Contenders</span>
+      `;
+    }
   }
 
-  renderWaitingRoster(data.players, currentArenaRoom.hostId);
+  renderWaitingRoster(players, currentArenaRoom.hostId);
 }
 
 function renderWaitingRoster(players, hostId) {
@@ -3116,21 +3239,36 @@ function renderWaitingRoster(players, hostId) {
 
   if (!grid) return;
 
-  const myId = arenaSocket?.id;
-  const isHost = (hostId === myId);
-  const me = players.find(p => p.id === myId);
+  const myId = arenaSocket?.id || 'self_scholar';
+  const myUsername = currentUser || 'Scholar';
 
-  if (countEl) countEl.textContent = players.length;
-  if (maxEl && currentArenaRoom) maxEl.textContent = currentArenaRoom.maxPlayers;
+  const rawList = Array.isArray(players) ? players : (currentArenaRoom?.players || []);
+  const safePlayers = rawList.length > 0 ? rawList : [{
+    id: myId,
+    username: myUsername,
+    playerTag: getScholarPlayerTag(),
+    avatar: getScholarAvatar(),
+    isHost: (currentArenaRoom?.isHost ?? true),
+    isReady: true,
+    score: 0,
+    progress: 0
+  }];
 
-  grid.innerHTML = players.map(p => {
-    const isSelf = (p.id === myId);
+  const isHost = (hostId === myId) || (currentArenaRoom?.isHost) || (safePlayers[0]?.id === myId);
+  const me = safePlayers.find(p => p && (p.id === myId || p.username === myUsername)) || safePlayers[0];
+
+  if (countEl) countEl.textContent = safePlayers.length;
+  if (maxEl && currentArenaRoom) maxEl.textContent = currentArenaRoom.maxPlayers || 4;
+
+  grid.innerHTML = safePlayers.map(p => {
+    if (!p) return '';
+    const isSelf = (p.id === myId || p.username === myUsername);
     const pIsHost = (p.id === hostId || p.isHost);
     return `
       <div class="arena-roster-card ${isSelf ? 'is-self' : ''}">
         <div class="roster-avatar">${p.avatar || '🎓'}</div>
         <div class="roster-info">
-          <div class="roster-name">${p.username} ${isSelf ? '(You)' : ''}</div>
+          <div class="roster-name">${p.username || 'Scholar'} ${isSelf ? '(You)' : ''}</div>
           <div class="roster-tag">${p.playerTag || ''}</div>
           <div class="roster-badges">
             ${pIsHost ? '<span class="host-crown">👑 Host</span>' : ''}
@@ -3151,9 +3289,9 @@ function renderWaitingRoster(players, hostId) {
       startBtn.disabled = false;
       startBtn.textContent = '🚀 Start Battle Now';
     }
-    const readyCount = players.filter(p => p.isReady || p.isHost).length;
+    const readyCount = safePlayers.filter(p => p && (p.isReady || p.isHost)).length;
     if (statusMsg) {
-      statusMsg.textContent = `👑 You are the Arena Host. Contenders ready: ${readyCount}/${players.length}. Start when ready!`;
+      statusMsg.textContent = `👑 You are the Arena Host. Contenders ready: ${readyCount}/${safePlayers.length}. Start when ready!`;
       statusMsg.style.color = 'var(--gold)';
     }
   } else {
@@ -3677,9 +3815,13 @@ function joinArenaRoom(roomId, passcode) {
   const errorBox = document.getElementById('arenaPrivateError');
   if (errorBox) errorBox.style.display = 'none';
 
-  arenaSocket.emit('join-room', {
-    roomId: roomId.toString().trim(),
-    passcode: passcode ? passcode.toString().trim() : null,
+  const cleanRoomId = (roomId || '').toString().trim();
+  const cleanPasscode = passcode ? passcode.toString().trim() : null;
+
+  // Emit both signature styles: arg1 as string (for legacy backends), arg2 as options (for modern backends)
+  arenaSocket.emit('join-room', cleanRoomId, {
+    roomId: cleanRoomId,
+    passcode: cleanPasscode,
     playerInfo
   });
 }
