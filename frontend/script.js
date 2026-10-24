@@ -2696,11 +2696,62 @@ function setupArenaVisibilityPicker() {
   });
 }
 
-function ensureArenaSocket() {
-  if (arenaSocket && arenaSocket.connected) return arenaSocket;
+let isSocketScriptLoading = false;
+function loadSocketIoClient(callback) {
+  if (typeof io === 'function') {
+    if (callback) callback();
+    return;
+  }
+  if (isSocketScriptLoading) {
+    const checkInterval = setInterval(() => {
+      if (typeof io === 'function') {
+        clearInterval(checkInterval);
+        if (callback) callback();
+      }
+    }, 150);
+    setTimeout(() => clearInterval(checkInterval), 8000);
+    return;
+  }
+  isSocketScriptLoading = true;
+  const script = document.createElement('script');
+  script.src = 'socket.io.min.js';
+  script.onload = () => {
+    isSocketScriptLoading = false;
+    console.log('⚡ Local socket.io.min.js client loaded successfully.');
+    if (callback) callback();
+  };
+  script.onerror = () => {
+    console.warn('Local socket.io.min.js load failed, falling back to CDN...');
+    const cdnScript = document.createElement('script');
+    cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.min.js';
+    cdnScript.onload = () => {
+      isSocketScriptLoading = false;
+      console.log('⚡ Socket.io fallback CDN loaded.');
+      if (callback) callback();
+    };
+    cdnScript.onerror = () => {
+      isSocketScriptLoading = false;
+      console.error('All Socket.io script sources failed to load.');
+    };
+    document.head.appendChild(cdnScript);
+  };
+  document.head.appendChild(script);
+}
+
+function ensureArenaSocket(callback) {
+  if (arenaSocket && arenaSocket.connected) {
+    if (callback) callback(arenaSocket);
+    return arenaSocket;
+  }
 
   if (typeof io !== 'function') {
-    console.error('Socket.io client library not loaded.');
+    console.warn('Socket.io client library not yet ready. Loading dynamically...');
+    loadSocketIoClient(() => {
+      if (typeof io === 'function') {
+        const sock = ensureArenaSocket(callback);
+        fetchPublicLobbies();
+      }
+    });
     return null;
   }
 
@@ -3803,8 +3854,10 @@ function leaveArenaRoom() {
 }
 
 function joinArenaRoom(roomId, passcode) {
-  ensureArenaSocket();
-  if (!arenaSocket) return;
+  const sock = ensureArenaSocket(() => {
+    joinArenaRoom(roomId, passcode);
+  });
+  if (!sock) return;
 
   const playerInfo = {
     username: currentUser || 'Scholar',
@@ -3819,7 +3872,7 @@ function joinArenaRoom(roomId, passcode) {
   const cleanPasscode = passcode ? passcode.toString().trim() : null;
 
   // Emit both signature styles: arg1 as string (for legacy backends), arg2 as options (for modern backends)
-  arenaSocket.emit('join-room', cleanRoomId, {
+  sock.emit('join-room', cleanRoomId, {
     roomId: cleanRoomId,
     passcode: cleanPasscode,
     playerInfo
@@ -3827,8 +3880,10 @@ function joinArenaRoom(roomId, passcode) {
 }
 
 function createArenaRoom() {
-  ensureArenaSocket();
-  if (!arenaSocket) return;
+  const sock = ensureArenaSocket(() => {
+    createArenaRoom();
+  });
+  if (!sock) return;
 
   const visRadio = document.querySelector('input[name="arenaVisibility"]:checked');
   const isPrivate = (visRadio?.value === 'private');
@@ -3846,7 +3901,7 @@ function createArenaRoom() {
     avatar: getScholarAvatar()
   };
 
-  arenaSocket.emit('create-room', {
+  sock.emit('create-room', {
     isPrivate,
     maxPlayers,
     config: { subject, subtopic, format, count, timer },

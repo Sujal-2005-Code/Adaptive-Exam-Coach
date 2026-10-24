@@ -13,8 +13,13 @@
     tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
   };
 </script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+<!-- Local bundled Socket.io client (zero CDN timeout risk) with fallback -->
+<script src="socket.io.min.js"></script>
+<script>
+  if (typeof io === 'undefined') {
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.min.js"><\/script>');
+  }
+</script>
 
 </head>
 <body data-active-tab="quiz">
@@ -1775,7 +1780,7 @@
   <span class="coach-pulse-dot"></span>
 </button>
 
-<script src="script.js?v=3.6"></script>
+<script src="script.js?v=3.7"></script>
 
 </body>
 </html>
