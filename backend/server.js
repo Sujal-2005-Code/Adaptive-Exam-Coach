@@ -29,7 +29,9 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
+const JWT_SECRET = (process.env.JWT_SECRET && process.env.JWT_SECRET.trim().length > 0)
+    ? process.env.JWT_SECRET.trim()
+    : 'super-secret-key-change-in-production-smartprep-2026';
 
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/aec-vap', {
     serverSelectionTimeoutMS: 10000
@@ -220,17 +222,55 @@ app.post('/api/login', async (req, res) => {
         return res.status(503).json({ error: 'Database is still establishing connection. Please try again in 5 seconds.' });
     }
     try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ error: 'Invalid credentials' });
-        
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
-        
-        const token = jwt.sign({ userId: user._id, username: user.username }, JWT_SECRET, { expiresIn: '30d' });
-        res.json({ token, username: user.username, customSyllabusName: user.customSyllabusName, customSyllabusData: user.customSyllabusData });
+        const { email, password } = req.body || {};
+        const identifier = String(email || '').trim();
+        const pwd = String(password || '');
+
+        if (!identifier || !pwd) {
+            return res.status(400).json({ error: 'Please enter both email/username and password.' });
+        }
+
+        const user = await User.findOne({
+            $or: [
+                { email: identifier.toLowerCase() },
+                { username: identifier }
+            ]
+        });
+
+        if (!user || !user.password) {
+            return res.status(400).json({ error: 'Invalid credentials' });
+        }
+
+        let isMatch = false;
+        try {
+            isMatch = await user.comparePassword(pwd);
+        } catch (pwErr) {
+            console.error('Password comparison error:', pwErr);
+            isMatch = false;
+        }
+
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Invalid credentials' });
+        }
+
+        const token = jwt.sign(
+            { userId: user._id, username: user.username },
+            JWT_SECRET,
+            { expiresIn: '30d' }
+        );
+
+        res.json({
+            token,
+            username: user.username,
+            xp: user.xp || 0,
+            streak: user.streak || 0,
+            badges: user.badges || [],
+            customSyllabusName: user.customSyllabusName || '',
+            customSyllabusData: user.customSyllabusData || {}
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Login error:', error);
+        res.status(500).json({ error: error.message || 'Login failed' });
     }
 });
 

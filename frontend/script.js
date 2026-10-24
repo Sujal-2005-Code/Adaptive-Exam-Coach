@@ -162,18 +162,25 @@ const MICRO_TOPICS = {
   Chemistry: ["Organic Chemistry", "Inorganic Chemistry", "Physical Chemistry", "Biochemistry", "Analytical Chemistry"],
   Biology: ["Cell Biology", "Genetics", "Evolution", "Human Anatomy", "Ecology"]
 };
+
+function getSubtopicsForTopic(topic) {
+  if (!topic) return ['General'];
+  if (MICRO_TOPICS[topic] && Array.isArray(MICRO_TOPICS[topic]) && MICRO_TOPICS[topic].length > 0) {
+    return MICRO_TOPICS[topic];
+  }
+  if (typeof customSyllabusData !== 'undefined' && customSyllabusData && Array.isArray(customSyllabusData[topic]) && customSyllabusData[topic].length > 0) {
+    return customSyllabusData[topic];
+  }
+  return [topic];
+}
+
 let microTracker = {};
 function initMicroTracker() {
   TOPICS.forEach(t => {
-    let subs = MICRO_TOPICS[t];
-    if (!subs && typeof customSyllabusData !== 'undefined' && customSyllabusData[t]) {
-      subs = customSyllabusData[t];
-    }
-    if (subs) {
-      subs.forEach(sub => {
-        if(!microTracker[sub]) microTracker[sub] = {correct:0, total:0};
-      });
-    }
+    const subs = getSubtopicsForTopic(t);
+    subs.forEach(sub => {
+      if (!microTracker[sub]) microTracker[sub] = { correct: 0, total: 0 };
+    });
   });
 }
 initMicroTracker();
@@ -258,8 +265,14 @@ function weakness_tracker(topic, correct, total){
   return getTop3Weakest();
 }
 function getTop3Weakest(){
-  return TOPICS.map(t => ({topic:t, acc: weaknessTracker[t].total>0 ? weaknessTracker[t].correct/weaknessTracker[t].total : 0.5, total: weaknessTracker[t].total}))
-    .sort((a,b)=> a.acc - b.acc).slice(0,3);
+  return TOPICS.map(t => {
+    if (!weaknessTracker[t]) weaknessTracker[t] = { correct: 0, total: 0 };
+    return {
+      topic: t,
+      acc: weaknessTracker[t].total > 0 ? weaknessTracker[t].correct / weaknessTracker[t].total : 0.5,
+      total: weaknessTracker[t].total
+    };
+  }).sort((a,b)=> a.acc - b.acc).slice(0,3);
 }
 function currentWeights(){
   const w = {};
@@ -573,14 +586,14 @@ async function fetchNextQuestion() {
   
   if (quiz.mode === 'custom' && (quiz.subject !== 'All' || quiz.subtopic !== 'All')) {
     if (quiz.subject === 'All') {
-      targetTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
-      const subs = MICRO_TOPICS[targetTopic];
-      weakestSub = subs ? subs[Math.floor(Math.random() * subs.length)] : targetTopic;
+      targetTopic = TOPICS[Math.floor(Math.random() * TOPICS.length)] || 'Math';
+      const subs = getSubtopicsForTopic(targetTopic);
+      weakestSub = subs[Math.floor(Math.random() * subs.length)] || targetTopic;
     } else {
       targetTopic = quiz.subject;
       if (quiz.subtopic === 'All') {
-        const subs = MICRO_TOPICS[targetTopic];
-        weakestSub = subs ? subs[Math.floor(Math.random() * subs.length)] : targetTopic;
+        const subs = getSubtopicsForTopic(targetTopic);
+        weakestSub = subs[Math.floor(Math.random() * subs.length)] || targetTopic;
       } else {
         weakestSub = quiz.subtopic;
       }
@@ -588,11 +601,12 @@ async function fetchNextQuestion() {
   } else {
     // Adaptive logic
     const weak = getTop3Weakest();
-    targetTopic = weak[0].topic; 
+    targetTopic = (weak && weak[0] && weak[0].topic) ? weak[0].topic : (TOPICS[0] || 'Math'); 
     
-    weakestSub = MICRO_TOPICS[targetTopic][0];
+    const subs = getSubtopicsForTopic(targetTopic);
+    weakestSub = subs[0] || targetTopic;
     let lowestAcc = 1.1;
-    MICRO_TOPICS[targetTopic].forEach(sub => {
+    subs.forEach(sub => {
       const t = microTracker[sub];
       const acc = (t && t.total > 0) ? t.correct / t.total : 0.5;
       if (acc < lowestAcc) {
@@ -2229,8 +2243,8 @@ if (resetPasswordBtn) {
 }
 
 document.getElementById('loginBtn').onclick = async () => {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+    const email = (document.getElementById('loginEmail')?.value || '').trim();
+    const password = document.getElementById('loginPassword')?.value || '';
     if (!email || !password) return showError('Please fill all fields');
     
     try {
@@ -2238,18 +2252,26 @@ document.getElementById('loginBtn').onclick = async () => {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ email, password })
         });
-        const data = await res.json();
-        if (data.error) return showError(data.error);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.error) {
+            return showError(data.error || 'Invalid credentials. Please check your username/email and password.');
+        }
         
         authToken = data.token;
         currentUser = data.username;
+        xp = data.xp || 0;
+        streak = data.streak || 0;
+        badges = data.badges || [];
         customSyllabusName = data.customSyllabusName || '';
         customSyllabusData = data.customSyllabusData || {};
         updateCustomSubjectDropdown();
+        updateXPUI();
         localStorage.setItem('aec_token', authToken);
         localStorage.setItem('aec_user', currentUser);
         initializeApp();
-    } catch (e) { showError('Failed to login'); }
+    } catch (e) {
+        showError('Unable to connect to login server. Please try again.');
+    }
 };
 
 document.getElementById('registerBtn').onclick = async () => {
